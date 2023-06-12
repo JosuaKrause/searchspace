@@ -36,12 +36,34 @@ function fragmentShader(measures) {
     varying lowp vec4 vColor;
     varying lowp vec4 vPos;
 
+    float dot2d(vec4 a, vec4 b) {
+      return a.x * b.x + a.y * b.y;
+    }
+
+    float card(vec4 v) {
+      return sqrt(v.x * v.x + v.y * v.y);
+    }
+
+    float dotDist(vec4 a, vec4 b) {
+      return 1.0 / (1.0 + exp(dot2d(a, b)));
+    }
+
+    float cos2d(vec4 a, vec4 b) {
+      return dot2d(a, b) / card(a) / card(b);
+    }
+
+    float cosDist(vec4 a, vec4 b) {
+      return (1.0 - cos2d(a, b)) * 0.5;
+    }
+
     void main(void) {
-      if ((mod(vPos.x, 2.0) < 1.0) != (mod(vPos.y, 2.0) < 1.0)) {
-        gl_FragColor = vColor;
-      } else {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-      }
+      float distNorm = cosDist(vPos, vec4(-1.0, 1.0, 1.0, 1.0));
+      gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
+      // if ((mod(vPos.x, 2.0) < 1.0) != (mod(vPos.y, 2.0) < 1.0)) {
+      //   gl_FragColor = vColor;
+      // } else {
+      //   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      // }
     }
   `;
 }
