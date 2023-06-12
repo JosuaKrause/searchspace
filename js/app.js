@@ -3,7 +3,15 @@ import { drawScene } from "./draw.js";
 
 function writeError(msg) {
   const elem = document.querySelector("#error");
-  elem.textContent = `ERROR: ${msg}`;
+  `${msg}`.split(/[\r\n\0]+/).forEach((line) => {
+    const lineStr = `${line}`.trim();
+    if (!lineStr) {
+      return;
+    }
+    const lineElem = document.createElement("div");
+    lineElem.textContent = lineStr;
+    elem.appendChild(lineElem);
+  });
 }
 
 function vertexShader(measures) {
@@ -13,16 +21,20 @@ function vertexShader(measures) {
 
     uniform mat4 uModelViewMatrix;
     uniform mat4 uProjectionMatrix;
+    uniform vec4 uRefPosition;
 
-    varying lowp vec4 vColor;
-    varying lowp vec4 vPos;
+    varying highp vec4 vColor;
+    varying highp vec4 vPos;
+    varying highp vec4 vRefPos;
 
     void main(void) {
       float unitX = float(${measures.unitX});
       float unitY = float(${measures.unitY});
-      vPos = aVertexPosition;
-      vPos.x *= unitX;
-      vPos.y *= unitY;
+      vec4 unit = vec4(unitX, unitY, 1.0, 1.0);
+
+      vPos = aVertexPosition * unit;
+      vRefPos = uRefPosition;
+
       gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
       vColor = aVertexColor;
     }
@@ -33,8 +45,9 @@ function fragmentShader(measures) {
   return `
     precision highp float;
 
-    varying lowp vec4 vColor;
-    varying lowp vec4 vPos;
+    varying highp vec4 vColor;
+    varying highp vec4 vPos;
+    varying highp vec4 vRefPos;
 
     float dot2d(vec4 a, vec4 b) {
       return a.x * b.x + a.y * b.y;
@@ -57,12 +70,15 @@ function fragmentShader(measures) {
     }
 
     void main(void) {
-      float distNorm = cosDist(vPos, vec4(-1.0, 1.0, 1.0, 1.0));
+      // float distNorm = cosDist(vPos, vRefPos);
+      float distNorm = dotDist(vPos, vRefPos);
       gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
-      // if ((mod(vPos.x, 2.0) < 1.0) != (mod(vPos.y, 2.0) < 1.0)) {
-      //   gl_FragColor = vColor;
-      // } else {
+      // vec4 ref = floor(vRefPos);
+      // if (vPos.x >= ref.x && vPos.x < ref.x + 1.0
+      //     && vPos.y >= ref.y && vPos.y < ref.y + 1.0) {
       //   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      // } else {
+      //   gl_FragColor = vColor;
       // }
     }
   `;
@@ -82,7 +98,7 @@ function initShaderProgram(gl, measures, vsSourceCb, fsSourceCb) {
   gl.linkProgram(shaderProgram);
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     const eLog = gl.getProgramInfoLog(shaderProgram);
-    writeError(`Unable to initialize the shader program: ${eLog}`);
+    writeError(`Unable to initialize the shader program:\n${eLog}`);
     return null;
   }
   return shaderProgram;
@@ -94,14 +110,14 @@ function loadShader(gl, type, measures, sourceCb) {
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     const eLog = gl.getShaderInfoLog(shader);
-    writeError(`An error occurred compiling the shaders: ${eLog}`);
+    writeError(`An error occurred compiling the shaders:\n${eLog}`);
     gl.deleteShader(shader);
     return null;
   }
   return shader;
 }
 
-function scene(gl) {
+function scene(gl, handlers) {
   const width = gl.canvas.clientWidth;
   const height = gl.canvas.clientHeight;
   const maxY = 10.0;
@@ -113,40 +129,79 @@ function scene(gl) {
   const blockX = sizeX / maxX;
   const blockY = sizeY / maxY;
   const measures = {
-    maxX, maxY, unitX, unitY, sizeX, sizeY, blockX, blockY
+    width, height, maxX, maxY, unitX, unitY, sizeX, sizeY, blockX, blockY
   };
   const shaderProgram = initShaderProgram(
     gl, measures, vertexShader, fragmentShader);
-  if (shaderProgram === null) {
-    return;
-  }
+    if (shaderProgram === null) {
+      return;
+    }
+
+  const buffers = initBuffers(gl, measures);
   const programInfo = {
     program: shaderProgram,
     attribLocations: {
-      vertexPosition: gl.getAttribLocation(
-        shaderProgram, "aVertexPosition"),
-      vertexColor: gl.getAttribLocation(
-        shaderProgram, "aVertexColor"),
+      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+      vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor"),
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(
         shaderProgram, "uProjectionMatrix"),
       modelViewMatrix: gl.getUniformLocation(
         shaderProgram, "uModelViewMatrix"),
+      refPosition: gl.getUniformLocation(shaderProgram, "uRefPosition")
     },
   };
-  const buffers = initBuffers(gl, measures);
-  drawScene(gl, measures, programInfo, buffers);
+  const values = {
+    refPosition: [1.0, 1.0, 1.0, 1.0],
+  }
+
+  function updateValue(obj) {
+    Object.keys(obj).forEach((key) => {
+      if (values[key] === undefined) {
+        writeError(`unknown value key: ${key}`);
+      }
+      values[key] = obj[key];
+    });
+    doDraw();
+  }
+
+  handlers(measures, updateValue);
+
+  function doDraw() {
+    try {
+      drawScene(gl, measures, programInfo, buffers, values);
+    } catch (err) {
+      console.error(err);
+      writeError(err);
+    }
+  }
+
+  doDraw();
 }
 
 export function main() {
-  const gl = document.querySelector("#main").getContext("webgl");
+  const canvas = document.querySelector("#main");
+  const gl = canvas.getContext("webgl");
   if (gl === null) {
     writeError("Unable to initialize WebGL. It might be not supported.");
     return;
   }
+
+  function handlers(measures, updateValue) {
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const pixelX = (e.clientX - rect.left) / rect.width * measures.width;
+      const pixelY = (e.clientY - rect.top) / rect.height * measures.height;
+      const halfW = measures.width * 0.5;
+      const halfH = measures.height * 0.5;
+      const orthoX = (pixelX - halfW) / halfW * measures.maxX;
+      const orthoY = -(pixelY - halfH) / halfH * measures.maxY;
+      updateValue({refPosition: [orthoX, orthoY, 1.0, 1.0]});
+    });
+  }
   try {
-    scene(gl);
+    scene(gl, handlers);
   } catch (err) {
     console.error(err);
     writeError(err);

@@ -1,4 +1,4 @@
-function drawScene(gl, measures, programInfo, buffers) {
+function drawScene(gl, measures, programInfo, buffers, values) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
@@ -27,6 +27,8 @@ function drawScene(gl, measures, programInfo, buffers) {
     programInfo.uniformLocations.modelViewMatrix,
     false,
     modelViewMatrix);
+  gl.uniform4fv(
+    programInfo.uniformLocations.refPosition, values.refPosition);
 
   {
     const offset = 0;

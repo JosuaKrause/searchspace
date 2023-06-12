@@ -17,6 +17,8 @@
     position: fixed;
     top: 10px;
     left: 10px;
+    max-height: 40vh;
+    overflow: auto;
     color: crimson;
     background-color: white;
     margin: 5px;
