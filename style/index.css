@@ -1,0 +1,30 @@
+* {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 20px;
+}
+
+#main {
+    width: 1280px;
+    height: 720px;
+    border: 1px solid black;
+}
+
+#error {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: crimson;
+    background-color: white;
+    margin: 5px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 7.5px;
+}
+
+#error:empty {
+    display: none;
+}
