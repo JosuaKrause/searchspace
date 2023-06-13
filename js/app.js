@@ -84,6 +84,10 @@ function fragmentShader(measures) {
       return (1.0 - cos2d(a, b)) * 0.5;
     }
 
+    float normLog(float v) {
+      return 1.0 - 1.0 / pow(2.0, log(1.0 + v));
+    }
+
     float normAtan(float v) {
       return 2.0 * atan(v) / PI;
     }
@@ -94,12 +98,12 @@ function fragmentShader(measures) {
 
     float l2Dist(vec2 a, vec2 b) {
       vec2 res = ((a - b) * (a - b));
-      return normAtan(sqrt(sumAll(res)));
+      return normLog(sqrt(sumAll(res)));
     }
 
     float l1Dist(vec2 a, vec2 b) {
       vec2 res = abs(a - b);
-      return normAtan(sumAll(res));
+      return normLog(sumAll(res));
     }
 
     float getDistance(int distanceFn, vec2 a, vec2 b) {
@@ -191,13 +195,24 @@ function fragmentShader(measures) {
 
     void main(void) {
       int distanceFn = uDistanceFn;
-      if (getDist(getClosest(DF_L2, vPos, uFixedRef == 1)) < 0.05) {
-        gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+      vec2 visClosest = getClosest(DF_L2, vPos, uFixedRef == 1);
+      if (getDist(visClosest) < 0.05) {
+        if (getIx(visClosest) < 0) {
+          gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+        } else {
+          gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+        }
       } else if (isBoundary(distanceFn, vPos, true)) {
         gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
       } else {
-        float distNorm = getDist(getClosest(distanceFn, vPos, true));
-        gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
+        vec2 closest = getClosest(distanceFn, vPos, true);
+        int closestIx = getIx(closest);
+        float distNorm = getDist(closest);
+        if (closestIx < 0) {
+          gl_FragColor = vec4(0.5, 0.5, distNorm, 1.0);
+        } else {
+          gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
+        }
       }
     }
   `;
