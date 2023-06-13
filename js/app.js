@@ -22,11 +22,13 @@ function vertexShader(measures) {
     uniform mat4 uProjectionMatrix;
 
     varying highp vec2 vPos;
+    varying highp vec2 vUnit;
 
     void main(void) {
       float unitX = float(${measures.unitX});
       float unitY = float(${measures.unitY});
       vec2 unit = vec2(unitX, unitY);
+      vUnit = unit;
 
       vPos = aVertexPosition.xy * unit;
 
@@ -40,15 +42,27 @@ function fragmentShader(measures) {
     precision highp float;
 
     uniform vec2 uRefPosition;
+    uniform int uFixedRef;
     uniform int uDistanceFn;
     uniform sampler2D uPointsTex;
     uniform int uPointsSize;
     uniform int uPointsCount;
 
     varying highp vec2 vPos;
+    varying highp vec2 vUnit;
 
     #define PI 3.141592653589793238462643383279502884
     #define MAX_LOOP 1000
+
+    #define TOP 1
+    #define RIGHT 2
+    #define BOTTOM 3
+    #define LEFT 4
+
+    #define DF_L1 0
+    #define DF_L2 1
+    #define DF_DOT 2
+    #define DF_COS 3
 
     float dot2d(vec2 a, vec2 b) {
       return dot(a, b);
@@ -88,50 +102,101 @@ function fragmentShader(measures) {
       return normAtan(sumAll(res));
     }
 
-    float getDistance(vec2 a, vec2 b) {
-      int distanceFn = uDistanceFn;
-      if (distanceFn == 0) {
+    float getDistance(int distanceFn, vec2 a, vec2 b) {
+      if (distanceFn == DF_L1) {
         return l1Dist(a, b);
       }
-      if (distanceFn == 1) {
+      if (distanceFn == DF_L2) {
         return l2Dist(a, b);
       }
-      if (distanceFn == 2) {
+      if (distanceFn == DF_DOT) {
         return dotDist(a, b);
       }
-      if (distanceFn == 3) {
+      if (distanceFn == DF_COS) {
         return cosDist(a, b);
       }
       return 0.0;
     }
 
-    void main(void) {
+    vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
       float size = float(uPointsSize);
       float distNorm = 1.0;
-      int channel = 0;
+      int closestIx = -1;
+      if (includeRef) {
+        distNorm = getDistance(distanceFn, pos, uRefPosition);
+        closestIx = -2;
+      }
       for (int ix = 0; ix < MAX_LOOP; ix += 1) {
         if (ix >= uPointsCount) {
           break;
         }
         float xpos = (mod(float(ix), size) + 0.5) / size;
         float ypos = (floor(float(ix) / size) + 0.5) / size;
-        vec2 ref = texture2D(
-          uPointsTex, vec2(xpos, ypos)).xy;
-        float curDist = getDistance(vPos, ref);
+        vec2 ref = texture2D(uPointsTex, vec2(xpos, ypos)).xy;
+        float curDist = getDistance(distanceFn, pos, ref);
         if (curDist < distNorm) {
           distNorm = curDist;
-          channel = ix;
+          closestIx = ix;
         }
       }
+      return vec2(distNorm, float(closestIx) + 0.5);
+    }
 
-      // float distNorm = getDistance(vPos, uRefPosition);
-      if (channel == 0) {
-        gl_FragColor = vec4(distNorm, 0.0, 0.0, 1.0);
-      } else if (channel == 1) {
-        gl_FragColor = vec4(0.0, distNorm, 0.0, 1.0);
-      } else if (channel == 2) {
-        gl_FragColor = vec4(0.0, 0.0, distNorm, 1.0);
+    int getIx(vec2 distAndIx) {
+      return int(distAndIx.y);
+    }
+
+    float getDist(vec2 distAndIx) {
+      return distAndIx.x;
+    }
+
+    vec2 getNext(vec2 pos, int direction) {
+      vec2 vout = pos;
+      vec2 unit = vUnit * 2.0;
+      if (direction == RIGHT) {
+        vout.x += unit.x;
+      }
+      if (direction == LEFT) {
+        vout.x -= unit.x;
+      }
+      if (direction == TOP) {
+        vout.y += unit.y;
+      }
+      if (direction == BOTTOM) {
+        vout.y -= unit.y;
+      }
+      return vout;
+    }
+
+    bool isBoundary(int distanceFn, vec2 pos, bool includeRef) {
+      int center = getIx(getClosest(distanceFn, pos, includeRef));
+      int top = getIx(getClosest(distanceFn, getNext(pos, TOP), includeRef));
+      int topRight = getIx(getClosest(distanceFn, getNext(getNext(pos, TOP), RIGHT), includeRef));
+      int right = getIx(getClosest(distanceFn, getNext(pos, RIGHT), includeRef));
+      int bottomRight = getIx(getClosest(distanceFn, getNext(getNext(pos, BOTTOM), RIGHT), includeRef));
+      int bottom = getIx(getClosest(distanceFn, getNext(pos, BOTTOM), includeRef));
+      int bottomLeft = getIx(getClosest(distanceFn, getNext(getNext(pos, BOTTOM), LEFT), includeRef));
+      int left = getIx(getClosest(distanceFn, getNext(pos, LEFT), includeRef));
+      int topLeft = getIx(getClosest(distanceFn, getNext(getNext(pos, TOP), LEFT), includeRef));
+      return !(
+        (center == top)
+        && (center == topRight)
+        && (center == right)
+        && (center == bottomRight)
+        && (center == bottom)
+        && (center == bottomLeft)
+        && (center == left)
+        && (center == topLeft));
+    }
+
+    void main(void) {
+      int distanceFn = uDistanceFn;
+      if (getDist(getClosest(DF_L2, vPos, uFixedRef == 1)) < 0.05) {
+        gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+      } else if (isBoundary(distanceFn, vPos, true)) {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
       } else {
+        float distNorm = getDist(getClosest(distanceFn, vPos, true));
         gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
       }
     }
@@ -203,6 +268,7 @@ function scene(gl, handlers) {
       modelViewMatrix: gl.getUniformLocation(
         shaderProgram, "uModelViewMatrix"),
       refPosition: gl.getUniformLocation(shaderProgram, "uRefPosition"),
+      fixedRef: gl.getUniformLocation(shaderProgram, "uFixedRef"),
       distanceFn: gl.getUniformLocation(shaderProgram, "uDistanceFn"),
       pointsTex: gl.getUniformLocation(shaderProgram, "uPointsTex"),
       pointsSize: gl.getUniformLocation(shaderProgram, "uPointsSize"),
@@ -210,13 +276,14 @@ function scene(gl, handlers) {
     },
   };
   const values = {
-    refPosition: [1.0, 1.0],
+    refPosition: [0.0, 0.0],
+    fixedRef: false,
     distanceFn: 0,
     points: [
-      [ 10.0,  10.0],
-      [ 10.0, -10.0],
-      [-10.0, -10.0],
-      [-10.0,  10.0],
+      [ 4.0,  2.0],
+      [-6.0,  8.0],
+      [-8.0, -4.0],
+      [ 2.0, -6.0],
     ],
   }
 
@@ -230,7 +297,7 @@ function scene(gl, handlers) {
     doDraw();
   }
 
-  handlers(measures, updateValue);
+  handlers(measures, values, updateValue);
 
   function doDraw() {
     try {
@@ -248,7 +315,7 @@ export function main() {
   const canvas = document.querySelector("#main");
   const gl = canvas.getContext("webgl2");
   if (gl === null) {
-    writeError("Unable to initialize WebGL. It might be not supported.");
+    writeError("Unable to initialize WebGL 2. It might be not supported.");
     return;
   }
   const distanceFnSelect = document.querySelector("#distancefn");
@@ -264,17 +331,19 @@ export function main() {
     return [orthoX, orthoY];
   }
 
-  let trackMouse = true;
-
-  function handlers(measures, updateValue) {
+  function handlers(measures, values, updateValue) {
     canvas.addEventListener('mousemove', (e) => {
-      if (trackMouse) {
-        updateValue({refPosition: convertMousePosition(measures, e)});
+      if (!values.fixedRef) {
+        updateValue({
+          refPosition: convertMousePosition(measures, e),
+        });
       }
     });
     canvas.addEventListener('click', (e) => {
-      trackMouse = !trackMouse;
-      updateValue({refPosition: convertMousePosition(measures, e)});
+      updateValue({
+        refPosition: convertMousePosition(measures, e),
+        fixedRef: !values.fixedRef,
+      });
     });
     distanceFnSelect.addEventListener('change', () => {
       const newDistanceFn = +distanceFnSelect.value;
