@@ -20,12 +20,8 @@ function vertexShader(measures) {
 
     uniform mat4 uModelViewMatrix;
     uniform mat4 uProjectionMatrix;
-    uniform vec2 uRefPosition;
-    uniform int uDistanceFn;
 
     varying highp vec2 vPos;
-    varying highp vec2 vRefPos;
-    varying float vDistanceFn;
 
     void main(void) {
       float unitX = float(${measures.unitX});
@@ -33,8 +29,6 @@ function vertexShader(measures) {
       vec2 unit = vec2(unitX, unitY);
 
       vPos = aVertexPosition.xy * unit;
-      vRefPos = uRefPosition;
-      vDistanceFn = float(uDistanceFn) + 0.5;
 
       gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
     }
@@ -45,11 +39,16 @@ function fragmentShader(measures) {
   return `
     precision highp float;
 
+    uniform vec2 uRefPosition;
+    uniform int uDistanceFn;
+    uniform sampler2D uPointsTex;
+    uniform int uPointsSize;
+    uniform int uPointsCount;
+
     varying highp vec2 vPos;
-    varying highp vec2 vRefPos;
-    varying float vDistanceFn;
 
     #define PI 3.141592653589793238462643383279502884
+    #define MAX_LOOP 1000
 
     float dot2d(vec2 a, vec2 b) {
       return dot(a, b);
@@ -90,7 +89,7 @@ function fragmentShader(measures) {
     }
 
     float getDistance(vec2 a, vec2 b) {
-      int distanceFn = int(vDistanceFn);
+      int distanceFn = uDistanceFn;
       if (distanceFn == 0) {
         return l1Dist(a, b);
       }
@@ -107,8 +106,34 @@ function fragmentShader(measures) {
     }
 
     void main(void) {
-      float distNorm = getDistance(vPos, vRefPos);
-      gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
+      float size = float(uPointsSize);
+      float distNorm = 1.0;
+      int channel = 0;
+      for (int ix = 0; ix < MAX_LOOP; ix += 1) {
+        if (ix >= uPointsCount) {
+          break;
+        }
+        float xpos = (mod(float(ix), size) + 0.5) / size;
+        float ypos = (floor(float(ix) / size) + 0.5) / size;
+        vec2 ref = texture2D(
+          uPointsTex, vec2(xpos, ypos)).xy;
+        float curDist = getDistance(vPos, ref);
+        if (curDist < distNorm) {
+          distNorm = curDist;
+          channel = ix;
+        }
+      }
+
+      // float distNorm = getDistance(vPos, uRefPosition);
+      if (channel == 0) {
+        gl_FragColor = vec4(distNorm, 0.0, 0.0, 1.0);
+      } else if (channel == 1) {
+        gl_FragColor = vec4(0.0, distNorm, 0.0, 1.0);
+      } else if (channel == 2) {
+        gl_FragColor = vec4(0.0, 0.0, distNorm, 1.0);
+      } else {
+        gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
+      }
     }
   `;
 }
@@ -179,11 +204,20 @@ function scene(gl, handlers) {
         shaderProgram, "uModelViewMatrix"),
       refPosition: gl.getUniformLocation(shaderProgram, "uRefPosition"),
       distanceFn: gl.getUniformLocation(shaderProgram, "uDistanceFn"),
+      pointsTex: gl.getUniformLocation(shaderProgram, "uPointsTex"),
+      pointsSize: gl.getUniformLocation(shaderProgram, "uPointsSize"),
+      pointsCount: gl.getUniformLocation(shaderProgram, "uPointsCount"),
     },
   };
   const values = {
     refPosition: [1.0, 1.0],
-    distanceFn: 3,
+    distanceFn: 0,
+    points: [
+      [ 10.0,  10.0],
+      [ 10.0, -10.0],
+      [-10.0, -10.0],
+      [-10.0,  10.0],
+    ],
   }
 
   function updateValue(obj) {
@@ -212,7 +246,7 @@ function scene(gl, handlers) {
 
 export function main() {
   const canvas = document.querySelector("#main");
-  const gl = canvas.getContext("webgl");
+  const gl = canvas.getContext("webgl2");
   if (gl === null) {
     writeError("Unable to initialize WebGL. It might be not supported.");
     return;
