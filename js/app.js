@@ -17,26 +17,26 @@ function writeError(msg) {
 function vertexShader(measures) {
   return `
     attribute vec4 aVertexPosition;
-    attribute vec4 aVertexColor;
 
     uniform mat4 uModelViewMatrix;
     uniform mat4 uProjectionMatrix;
-    uniform vec4 uRefPosition;
+    uniform vec2 uRefPosition;
+    uniform int uDistanceFn;
 
-    varying highp vec4 vColor;
-    varying highp vec4 vPos;
-    varying highp vec4 vRefPos;
+    varying highp vec2 vPos;
+    varying highp vec2 vRefPos;
+    varying float vDistanceFn;
 
     void main(void) {
       float unitX = float(${measures.unitX});
       float unitY = float(${measures.unitY});
-      vec4 unit = vec4(unitX, unitY, 1.0, 1.0);
+      vec2 unit = vec2(unitX, unitY);
 
-      vPos = aVertexPosition * unit;
+      vPos = aVertexPosition.xy * unit;
       vRefPos = uRefPosition;
+      vDistanceFn = float(uDistanceFn) + 0.5;
 
       gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-      vColor = aVertexColor;
     }
   `;
 }
@@ -45,41 +45,70 @@ function fragmentShader(measures) {
   return `
     precision highp float;
 
-    varying highp vec4 vColor;
-    varying highp vec4 vPos;
-    varying highp vec4 vRefPos;
+    varying highp vec2 vPos;
+    varying highp vec2 vRefPos;
+    varying float vDistanceFn;
 
-    float dot2d(vec4 a, vec4 b) {
-      return a.x * b.x + a.y * b.y;
+    #define PI 3.141592653589793238462643383279502884
+
+    float dot2d(vec2 a, vec2 b) {
+      return dot(a, b);
     }
 
-    float card(vec4 v) {
-      return sqrt(v.x * v.x + v.y * v.y);
+    float card(vec2 v) {
+      return sqrt(dot(v, v));
     }
 
-    float dotDist(vec4 a, vec4 b) {
+    float dotDist(vec2 a, vec2 b) {
       return 1.0 / (1.0 + exp(dot2d(a, b)));
     }
 
-    float cos2d(vec4 a, vec4 b) {
+    float cos2d(vec2 a, vec2 b) {
       return dot2d(a, b) / card(a) / card(b);
     }
 
-    float cosDist(vec4 a, vec4 b) {
+    float cosDist(vec2 a, vec2 b) {
       return (1.0 - cos2d(a, b)) * 0.5;
     }
 
+    float normAtan(float v) {
+      return 2.0 * atan(v) / PI;
+    }
+
+    float sumAll(vec2 v) {
+      return dot(v, vec2(1.0, 1.0));
+    }
+
+    float l2Dist(vec2 a, vec2 b) {
+      vec2 res = ((a - b) * (a - b));
+      return normAtan(sqrt(sumAll(res)));
+    }
+
+    float l1Dist(vec2 a, vec2 b) {
+      vec2 res = abs(a - b);
+      return normAtan(sumAll(res));
+    }
+
+    float getDistance(vec2 a, vec2 b) {
+      int distanceFn = int(vDistanceFn);
+      if (distanceFn == 0) {
+        return l1Dist(a, b);
+      }
+      if (distanceFn == 1) {
+        return l2Dist(a, b);
+      }
+      if (distanceFn == 2) {
+        return dotDist(a, b);
+      }
+      if (distanceFn == 3) {
+        return cosDist(a, b);
+      }
+      return 0.0;
+    }
+
     void main(void) {
-      // float distNorm = cosDist(vPos, vRefPos);
-      float distNorm = dotDist(vPos, vRefPos);
+      float distNorm = getDistance(vPos, vRefPos);
       gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.0);
-      // vec4 ref = floor(vRefPos);
-      // if (vPos.x >= ref.x && vPos.x < ref.x + 1.0
-      //     && vPos.y >= ref.y && vPos.y < ref.y + 1.0) {
-      //   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-      // } else {
-      //   gl_FragColor = vColor;
-      // }
     }
   `;
 }
@@ -142,18 +171,19 @@ function scene(gl, handlers) {
     program: shaderProgram,
     attribLocations: {
       vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
-      vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor"),
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(
         shaderProgram, "uProjectionMatrix"),
       modelViewMatrix: gl.getUniformLocation(
         shaderProgram, "uModelViewMatrix"),
-      refPosition: gl.getUniformLocation(shaderProgram, "uRefPosition")
+      refPosition: gl.getUniformLocation(shaderProgram, "uRefPosition"),
+      distanceFn: gl.getUniformLocation(shaderProgram, "uDistanceFn"),
     },
   };
   const values = {
-    refPosition: [1.0, 1.0, 1.0, 1.0],
+    refPosition: [1.0, 1.0],
+    distanceFn: 3,
   }
 
   function updateValue(obj) {
@@ -187,17 +217,34 @@ export function main() {
     writeError("Unable to initialize WebGL. It might be not supported.");
     return;
   }
+  const distanceFnSelect = document.querySelector("#distancefn");
+
+  function convertMousePosition(measures, e) {
+    const rect = canvas.getBoundingClientRect();
+    const pixelX = (e.clientX - rect.left) / rect.width * measures.width;
+    const pixelY = (e.clientY - rect.top) / rect.height * measures.height;
+    const halfW = measures.width * 0.5;
+    const halfH = measures.height * 0.5;
+    const orthoX = (pixelX - halfW) / halfW * measures.maxX;
+    const orthoY = -(pixelY - halfH) / halfH * measures.maxY;
+    return [orthoX, orthoY];
+  }
+
+  let trackMouse = true;
 
   function handlers(measures, updateValue) {
     canvas.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const pixelX = (e.clientX - rect.left) / rect.width * measures.width;
-      const pixelY = (e.clientY - rect.top) / rect.height * measures.height;
-      const halfW = measures.width * 0.5;
-      const halfH = measures.height * 0.5;
-      const orthoX = (pixelX - halfW) / halfW * measures.maxX;
-      const orthoY = -(pixelY - halfH) / halfH * measures.maxY;
-      updateValue({refPosition: [orthoX, orthoY, 1.0, 1.0]});
+      if (trackMouse) {
+        updateValue({refPosition: convertMousePosition(measures, e)});
+      }
+    });
+    canvas.addEventListener('click', (e) => {
+      trackMouse = !trackMouse;
+      updateValue({refPosition: convertMousePosition(measures, e)});
+    });
+    distanceFnSelect.addEventListener('change', () => {
+      const newDistanceFn = +distanceFnSelect.value;
+      updateValue({distanceFn: newDistanceFn});
     });
   }
   try {

@@ -12,8 +12,21 @@
         <script src="js/app.js" type="module"></script>
     </head>
     <body>
-        <div>
-            <canvas id="main" width="1280" height="720"></canvas>
+        <div class="hmain">
+            <div class="vmain">
+                <div class="topbar">
+                    <label for="distancefn">Distance Function:</label>
+                    <select id="distancefn" name="distancefn">
+                        <option value="0">L1</option>
+                        <option value="1">L2</option>
+                        <option value="2">Dot</option>
+                        <option value="3" selected="selected">Cos</option>
+                    </select>
+                </div>
+                <div>
+                    <canvas id="main" width="800" height="600"></canvas>
+                </div>
+            </div>
         </div>
         <div id="error"></div>
     </body>

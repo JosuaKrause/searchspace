@@ -7,10 +7,43 @@
     line-height: 20px;
 }
 
+body {
+    margin: 0;
+    padding: 0;
+}
+
+label::after {
+    content: "\00a0";
+}
+
 #main {
-    width: 1280px;
-    height: 720px;
+    width: 800px;
+    height: 600px;
     border: 1px solid black;
+}
+
+.topbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: start;
+    margin: 5px;
+    width: 100%;
+}
+
+.hmain {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+}
+
+.vmain {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    flex-grow: 0;
 }
 
 #error {

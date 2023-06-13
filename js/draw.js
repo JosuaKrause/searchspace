@@ -17,7 +17,6 @@ function drawScene(gl, measures, programInfo, buffers, values) {
   mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -5.0]);
 
   setPositionAttribute(gl, buffers, programInfo);
-  setColorAttribute(gl, buffers, programInfo);
   gl.useProgram(programInfo.program);
   gl.uniformMatrix4fv(
     programInfo.uniformLocations.projectionMatrix,
@@ -27,8 +26,9 @@ function drawScene(gl, measures, programInfo, buffers, values) {
     programInfo.uniformLocations.modelViewMatrix,
     false,
     modelViewMatrix);
-  gl.uniform4fv(
+  gl.uniform2fv(
     programInfo.uniformLocations.refPosition, values.refPosition);
+  gl.uniform1i(programInfo.uniformLocations.distanceFn, values.distanceFn);
 
   {
     const offset = 0;
@@ -52,24 +52,6 @@ function setPositionAttribute(gl, buffers, programInfo) {
     stride,
     offset);
   gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
-}
-
-function setColorAttribute(gl, buffers, programInfo) {
-  const numComponents = 4;
-  const type = gl.FLOAT;
-  const normalize = false;
-  const stride = 0;
-  const offset = 0;
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-  gl.vertexAttribPointer(
-    programInfo.attribLocations.vertexColor,
-    numComponents,
-    type,
-    normalize,
-    stride,
-    offset
-  );
-  gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
 }
 
 export { drawScene };
