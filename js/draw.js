@@ -1,5 +1,4 @@
-function loadAsTex(
-    gl, locationTexture, locationSize, locationCount, values) {
+function loadAsTex(gl, locationTexture, locationSize, locationCount, values) {
   const count = values.length;
   const size = Math.ceil(Math.sqrt(count));
   const pixs = 4;
@@ -28,7 +27,8 @@ function loadAsTex(
     0,
     gl.RGBA,
     gl.FLOAT,
-    data);
+    data,
+  );
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -37,7 +37,6 @@ function loadAsTex(
   gl.uniform1i(locationSize, size);
   gl.uniform1i(locationCount, count);
 }
-
 
 function drawScene(gl, measures, programInfo, buffers, values) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -50,9 +49,13 @@ function drawScene(gl, measures, programInfo, buffers, values) {
   const projectionMatrix = mat4.create();
   mat4.ortho(
     projectionMatrix,
-    -measures.sizeX, measures.sizeX,
-    -measures.sizeY, measures.sizeY,
-    0.01, 200);
+    -measures.sizeX,
+    measures.sizeX,
+    -measures.sizeY,
+    measures.sizeY,
+    0.01,
+    200,
+  );
 
   const modelViewMatrix = mat4.create();
   mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -5.0]);
@@ -62,13 +65,18 @@ function drawScene(gl, measures, programInfo, buffers, values) {
   gl.uniformMatrix4fv(
     programInfo.uniformLocations.projectionMatrix,
     false,
-    projectionMatrix);
+    projectionMatrix,
+  );
   gl.uniformMatrix4fv(
     programInfo.uniformLocations.modelViewMatrix,
     false,
-    modelViewMatrix);
-  gl.uniform2fv(
-    programInfo.uniformLocations.refPosition, values.refPosition);
+    modelViewMatrix,
+  );
+  gl.uniform2fv(programInfo.uniformLocations.unit, [
+    measures.unitX,
+    measures.unitY,
+  ]);
+  gl.uniform2fv(programInfo.uniformLocations.refPosition, values.refPosition);
   gl.uniform1i(programInfo.uniformLocations.fixedRef, values.fixedRef);
   gl.uniform1i(programInfo.uniformLocations.distanceFn, values.distanceFn);
   loadAsTex(
@@ -76,7 +84,8 @@ function drawScene(gl, measures, programInfo, buffers, values) {
     programInfo.uniformLocations.pointsTex,
     programInfo.uniformLocations.pointsSize,
     programInfo.uniformLocations.pointsCount,
-    values.points);
+    values.points,
+  );
 
   {
     const offset = 0;
@@ -98,7 +107,8 @@ function setPositionAttribute(gl, buffers, programInfo) {
     type,
     normalize,
     stride,
-    offset);
+    offset,
+  );
   gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 }
 
