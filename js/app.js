@@ -111,7 +111,7 @@ async function scene(gl, handlers) {
   const values = {
     refPosition: [0.0, 0.0],
     fixedRef: false,
-    distanceFn: 0,
+    distanceFn: 3,
     points: [
       [4.0, 2.0],
       [-6.0, 8.0],

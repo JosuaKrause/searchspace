@@ -11,7 +11,7 @@ uniform int uPointsCount;
 varying highp vec2 vPos;
 
 #define PI 3.141592653589793238462643383279502884
-#define MAX_LOOP 1000
+#define MAX_LOOP 100
 
 #define TOP 1
 #define RIGHT 2
@@ -144,6 +144,20 @@ bool isBoundary(int distanceFn, vec2 pos, bool includeRef) {
     return !((center == top) && (center == topRight) && (center == right) && (center == bottomRight) && (center == bottom) && (center == bottomLeft) && (center == left) && (center == topLeft));
 }
 
+bool inRectangle(vec2 topLeft, vec2 bottomRight) {
+    return (vPos.x >= topLeft.x) && (vPos.y >= topLeft.y) && (vPos.x <= bottomRight.x) && (vPos.y <= bottomRight.y);
+}
+
+vec4 drawCircle(vec4 inColor, vec2 pos, float radius, vec4 color) {
+    if (!inRectangle(pos - vec2(radius, radius), pos + vec2(radius, radius))) {
+        return inColor;
+    }
+    if (dot(pos - vPos, pos - vPos) > radius * radius) {
+        return inColor;
+    }
+    return color;
+}
+
 void main(void) {
     int distanceFn = uDistanceFn;
     vec2 visClosest = getClosest(DF_L2, vPos, uFixedRef == 1);
@@ -165,6 +179,7 @@ void main(void) {
             gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.);
         }
     }
+    gl_FragColor = drawCircle(gl_FragColor, vec2(4.5, -1.5), 0.5, vec4(1., 0., 1., 1.));
     if ((mod(vPos.x, 2.0) < 1.0) != mod(vPos.y, 2.0) < 1.0) {
         gl_FragColor.xyz = 1.0 - gl_FragColor.xyz;
     }
