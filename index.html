@@ -14,15 +14,7 @@
     <body>
         <div class="hmain">
             <div class="vmain">
-                <div class="topbar">
-                    <label for="distancefn">Distance Function:</label>
-                    <select id="distancefn" name="distancefn">
-                        <option value="0">L1</option>
-                        <option value="1">L2</option>
-                        <option value="2">Dot</option>
-                        <option value="3" selected="selected">Cos</option>
-                    </select>
-                </div>
+                <div id="topbar" class="topbar"></div>
                 <div>
                     <canvas id="main" width="800" height="600"></canvas>
                 </div>
@@ -31,7 +23,7 @@
         <div id="error"></div>
     </body>
     <script type="module">
-    import { main } from "./js/app.js";
-    main();
+    import App from "./js/app.js";
+    new App('#main', '#topbar', '#error').init();
     </script>
 </html>

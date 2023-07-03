@@ -1,7 +1,7 @@
 precision highp float;
 
 uniform highp vec2 uUnit;
-uniform vec2 uRefPosition;
+uniform highp vec2 uRefPosition;
 uniform int uFixedRef;
 uniform int uDistanceFn;
 uniform sampler2D uPointsTex;
