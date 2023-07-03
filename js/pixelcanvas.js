@@ -324,6 +324,8 @@ export default class PixelCanvas {
     valueDefs.forEach(({ name, type }) => {
       if (type === '2d') {
         gl.uniform2fv(programInfo.uniformLocations[name], values[name]);
+      } else if (type === 'float') {
+        gl.uniform1f(programInfo.uniformLocations[name], values[name]);
       } else if (['int', 'bool', 'enum'].includes(type)) {
         gl.uniform1i(programInfo.uniformLocations[name], values[name]);
       } else if (type === 'array2d') {

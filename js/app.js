@@ -19,6 +19,7 @@ export default class App extends PixelCanvas {
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.0, 0.0]);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', 3);
+    this.addValue('distFactor', 'uDistFactor', 'float', 0.25);
     this.addValue('points', 'uPoints', 'array2d', [
       [4.0, 2.0],
       [-6.0, 8.0],

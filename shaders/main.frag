@@ -2,6 +2,7 @@ precision highp float;
 
 uniform highp vec2 uUnit;
 uniform highp vec2 uRefPosition;
+uniform highp float uDistFactor;
 uniform int uFixedRef;
 uniform int uShowGrid;
 uniform int uDistanceFn;
@@ -24,20 +25,16 @@ varying highp vec2 vPos;
 #define DF_DOT 2
 #define DF_COS 3
 
-float dot2d(vec2 a, vec2 b) {
-    return dot(a, b);
-}
-
 float card(vec2 v) {
     return sqrt(dot(v, v));
 }
 
 float dotDist(vec2 a, vec2 b) {
-    return 1. / (1. + exp(dot2d(a, b)));
+    return exp(-dot(a, b));
 }
 
 float cos2d(vec2 a, vec2 b) {
-    return dot2d(a, b) / card(a) / card(b);
+    return dot(a, b) / card(a) / card(b);
 }
 
 float cosDist(vec2 a, vec2 b) {
@@ -57,13 +54,13 @@ float sumAll(vec2 v) {
 }
 
 float l2Dist(vec2 a, vec2 b) {
-    vec2 res = ((a - b) * (a - b));
-    return normLog(sqrt(sumAll(res)));
+    vec2 res = a - b;
+    return sqrt(dot(res, res));
 }
 
 float l1Dist(vec2 a, vec2 b) {
     vec2 res = abs(a - b);
-    return normLog(sumAll(res));
+    return sumAll(res);
 }
 
 float getDistance(int distanceFn, vec2 a, vec2 b) {
@@ -82,8 +79,17 @@ float getDistance(int distanceFn, vec2 a, vec2 b) {
     return 0.;
 }
 
-vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
+vec2 getPointPos(int ix) {
+    if(ix < 0) {
+        return uRefPosition;
+    }
     float size = float(uPointsSize);
+    float xpos = (mod(float(ix), size) + .5) / size;
+    float ypos = (floor(float(ix) / size) + .5) / size;
+    return texture2D(uPointsTex, vec2(xpos, ypos)).xy;
+}
+
+vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
     float distNorm = 1.;
     int closestIx = -1;
     if(includeRef) {
@@ -94,20 +100,22 @@ vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
         if(ix >= uPointsCount) {
             break;
         }
-        float xpos = (mod(float(ix), size) + .5) / size;
-        float ypos = (floor(float(ix) / size) + .5) / size;
-        vec2 ref = texture2D(uPointsTex, vec2(xpos, ypos)).xy;
+        vec2 ref = getPointPos(ix);
         float curDist = getDistance(distanceFn, pos, ref);
         if(curDist < distNorm) {
             distNorm = curDist;
             closestIx = ix;
         }
     }
-    return vec2(distNorm, float(closestIx) + .5);
+    return vec2(uDistFactor * distNorm, float(closestIx) + .5);
 }
 
 int getIx(vec2 distAndIx) {
     return int(distAndIx.y);
+}
+
+int getClosestIx(int distanceFn, vec2 pos, bool includeRef) {
+    return getIx(getClosest(distanceFn, pos, includeRef));
 }
 
 float getDist(vec2 distAndIx) {
@@ -132,17 +140,49 @@ vec2 getNext(vec2 pos, int direction) {
     return vout;
 }
 
-bool isBoundary(int distanceFn, vec2 pos, bool includeRef) {
-    int center = getIx(getClosest(distanceFn, pos, includeRef));
-    int top = getIx(getClosest(distanceFn, getNext(pos, TOP), includeRef));
-    int topRight = getIx(getClosest(distanceFn, getNext(getNext(pos, TOP), RIGHT), includeRef));
-    int right = getIx(getClosest(distanceFn, getNext(pos, RIGHT), includeRef));
-    int bottomRight = getIx(getClosest(distanceFn, getNext(getNext(pos, BOTTOM), RIGHT), includeRef));
-    int bottom = getIx(getClosest(distanceFn, getNext(pos, BOTTOM), includeRef));
-    int bottomLeft = getIx(getClosest(distanceFn, getNext(getNext(pos, BOTTOM), LEFT), includeRef));
-    int left = getIx(getClosest(distanceFn, getNext(pos, LEFT), includeRef));
-    int topLeft = getIx(getClosest(distanceFn, getNext(getNext(pos, TOP), LEFT), includeRef));
-    return !((center == top) && (center == topRight) && (center == right) && (center == bottomRight) && (center == bottom) && (center == bottomLeft) && (center == left) && (center == topLeft));
+vec2 mTop(vec2 pos) {
+    return getNext(pos, TOP);
+}
+
+vec2 mTopRight(vec2 pos) {
+    return getNext(getNext(pos, TOP), RIGHT);
+}
+
+vec2 mRight(vec2 pos) {
+    return getNext(pos, RIGHT);
+}
+
+vec2 mBottomRight(vec2 pos) {
+    return getNext(getNext(pos, BOTTOM), RIGHT);
+}
+
+vec2 mBottom(vec2 pos) {
+    return getNext(pos, BOTTOM);
+}
+
+vec2 mBottomLeft(vec2 pos) {
+    return getNext(getNext(pos, BOTTOM), LEFT);
+}
+
+vec2 mLeft(vec2 pos) {
+    return getNext(pos, LEFT);
+}
+
+vec2 mTopLeft(vec2 pos) {
+    return getNext(getNext(pos, TOP), LEFT);
+}
+
+float countBoundary(int distanceFn, vec2 pos, bool includeRef) {
+    int center = getClosestIx(distanceFn, pos, includeRef);
+    int top = getClosestIx(distanceFn, mTop(pos), includeRef);
+    int topRight = getClosestIx(distanceFn, mTopRight(pos), includeRef);
+    int right = getClosestIx(distanceFn, mRight(pos), includeRef);
+    int bottomRight = getClosestIx(distanceFn, mBottomRight(pos), includeRef);
+    int bottom = getClosestIx(distanceFn, mBottom(pos), includeRef);
+    int bottomLeft = getClosestIx(distanceFn, mBottomLeft(pos), includeRef);
+    int left = getClosestIx(distanceFn, mLeft(pos), includeRef);
+    int topLeft = getClosestIx(distanceFn, mTopLeft(pos), includeRef);
+    return (float(center == top) + float(center == topRight) + float(center == right) + float(center == bottomRight) + float(center == bottom) + float(center == bottomLeft) + float(center == left) + float(center == topLeft)) / 8.;
 }
 
 bool inRectangle(vec2 topLeft, vec2 bottomRight) {
@@ -161,26 +201,24 @@ vec4 drawCircle(vec4 inColor, vec2 pos, float radius, vec4 color) {
 
 void main(void) {
     int distanceFn = uDistanceFn;
-    vec2 visClosest = getClosest(DF_L2, vPos, uFixedRef != 0);
-    if(getDist(visClosest) < .05) {
-        if(getIx(visClosest) < 0) {
-            gl_FragColor = vec4(1., 1., 0., 1.);
-        } else {
-            gl_FragColor = vec4(0., 1., 1., 1.);
-        }
-    } else if(isBoundary(distanceFn, vPos, true)) {
-        gl_FragColor = vec4(1., 0., 0., 1.);
-    } else {
-        vec2 closest = getClosest(distanceFn, vPos, true);
-        int closestIx = getIx(closest);
-        float distNorm = getDist(closest);
-        if(closestIx < 0) {
-            gl_FragColor = vec4(.5, .5, distNorm, 1.);
-        } else {
-            gl_FragColor = vec4(distNorm, distNorm, distNorm, 1.);
-        }
-    }
-    gl_FragColor = drawCircle(gl_FragColor, vec2(4.5, -1.5), 0.5, vec4(1., 0., 1., 1.));
+
+    // Main Background
+    vec2 closest = getClosest(distanceFn, vPos, true);
+    int closestIx = getIx(closest);
+    float distNorm = clamp(getDist(closest), 0., 1.);
+    gl_FragColor = (closestIx < 0) ? vec4(.5, .5, distNorm, 1.) : vec4(distNorm, distNorm, distNorm, 1.);
+
+    // Boundaries
+    float crossings = countBoundary(distanceFn, vPos, true);
+    gl_FragColor = mix(vec4(1., 0., 0., 1.), gl_FragColor, crossings);
+
+    // Point Dots
+    int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
+    vec2 nearestPos = getPointPos(nearestIx);
+    vec4 nearestColor = nearestIx < 0 ? vec4(1., 1., 0., 1.) : vec4(0., 1., 1., 1.);
+    gl_FragColor = drawCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor);
+
+    // Grid
     if(uShowGrid != 0) {
         if((mod(vPos.x, 2.0) < 1.0) != mod(vPos.y, 2.0) < 1.0) {
             gl_FragColor.xyz = 1.0 - gl_FragColor.xyz;
