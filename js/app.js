@@ -16,6 +16,7 @@ export default class App extends PixelCanvas {
     super.setup();
 
     this.addValue('fixedRef', 'uFixedRef', 'bool', false);
+    this.addValue('showGrid', 'uShowGrid', 'bool', false);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.0, 0.0]);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', 3);
     this.addValue('points', 'uPoints', 'array2d', [
@@ -50,11 +51,14 @@ export default class App extends PixelCanvas {
       });
     });
 
-    this.addControl('distanceFn', 'Distance Function', [
-      { value: '0', text: 'L1' },
-      { value: '1', text: 'L2' },
-      { value: '2', text: 'Dot' },
-      { value: '3', text: 'Cos' },
-    ]);
+    this.addControl('distanceFn', 'Distance Function', {
+      options: [
+        { value: '0', text: 'L1' },
+        { value: '1', text: 'L2' },
+        { value: '2', text: 'Dot' },
+        { value: '3', text: 'Cos' },
+      ],
+    });
+    this.addControl('showGrid', 'Show Grid', {});
   }
 } // App

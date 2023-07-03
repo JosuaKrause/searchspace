@@ -105,7 +105,7 @@ export default class PixelCanvas {
     let elem;
     if (type === 'enum') {
       elem = document.createElement('select');
-      info.forEach(({ value, text }) => {
+      info.options.forEach(({ value, text }) => {
         const option = document.createElement('option');
         option.setAttribute('value', value);
         option.textContent = text;
@@ -116,6 +116,13 @@ export default class PixelCanvas {
         const newValue = +elem.value;
         this.updateValue({ [name]: newValue });
       });
+    } else if (type === 'bool') {
+      elem = document.createElement('input');
+      elem.setAttribute('type', 'checkbox');
+      elem.checked = curValue;
+      elem.addEventListener('change', () => {
+        this.updateValue({ [name]: elem.checked });
+      });
     } else {
       throw new Error(`unsupported type ${type} for ${name} (${shaderName})`);
     }
@@ -124,8 +131,10 @@ export default class PixelCanvas {
     const label = document.createElement('label');
     label.setAttribute('for', fullName);
     label.textContent = prettyName;
-    topbar.appendChild(label);
-    topbar.appendChild(elem);
+    const div = document.createElement('div');
+    div.appendChild(label);
+    div.appendChild(elem);
+    topbar.appendChild(div);
   }
 
   async loadShader(type, path) {

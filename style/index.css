@@ -30,6 +30,10 @@ label::after {
     width: 100%;
 }
 
+.topbar>div {
+    margin-right: 5px;
+}
+
 .hmain {
     display: flex;
     justify-content: center;

@@ -3,6 +3,7 @@ precision highp float;
 uniform highp vec2 uUnit;
 uniform highp vec2 uRefPosition;
 uniform int uFixedRef;
+uniform int uShowGrid;
 uniform int uDistanceFn;
 uniform sampler2D uPointsTex;
 uniform int uPointsSize;
@@ -149,10 +150,10 @@ bool inRectangle(vec2 topLeft, vec2 bottomRight) {
 }
 
 vec4 drawCircle(vec4 inColor, vec2 pos, float radius, vec4 color) {
-    if (!inRectangle(pos - vec2(radius, radius), pos + vec2(radius, radius))) {
+    if(!inRectangle(pos - vec2(radius, radius), pos + vec2(radius, radius))) {
         return inColor;
     }
-    if (dot(pos - vPos, pos - vPos) > radius * radius) {
+    if(dot(pos - vPos, pos - vPos) > radius * radius) {
         return inColor;
     }
     return color;
@@ -160,7 +161,7 @@ vec4 drawCircle(vec4 inColor, vec2 pos, float radius, vec4 color) {
 
 void main(void) {
     int distanceFn = uDistanceFn;
-    vec2 visClosest = getClosest(DF_L2, vPos, uFixedRef == 1);
+    vec2 visClosest = getClosest(DF_L2, vPos, uFixedRef != 0);
     if(getDist(visClosest) < .05) {
         if(getIx(visClosest) < 0) {
             gl_FragColor = vec4(1., 1., 0., 1.);
@@ -180,7 +181,9 @@ void main(void) {
         }
     }
     gl_FragColor = drawCircle(gl_FragColor, vec2(4.5, -1.5), 0.5, vec4(1., 0., 1., 1.));
-    if ((mod(vPos.x, 2.0) < 1.0) != mod(vPos.y, 2.0) < 1.0) {
-        gl_FragColor.xyz = 1.0 - gl_FragColor.xyz;
+    if(uShowGrid != 0) {
+        if((mod(vPos.x, 2.0) < 1.0) != mod(vPos.y, 2.0) < 1.0) {
+            gl_FragColor.xyz = 1.0 - gl_FragColor.xyz;
+        }
     }
 }
