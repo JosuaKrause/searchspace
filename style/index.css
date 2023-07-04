@@ -16,10 +16,16 @@ label::after {
     content: "\00a0";
 }
 
-#main {
-    width: 800px;
-    height: 600px;
+.main {
     border: 1px solid black;
+    margin: 0;
+    padding: 0;
+}
+
+canvas {
+    display: inherit;
+    margin: 0;
+    padding: 0;
 }
 
 .topbar {
@@ -32,6 +38,10 @@ label::after {
 
 .topbar>div {
     margin-right: 5px;
+}
+
+.topbar label {
+    vertical-align: top;
 }
 
 .hmain {
@@ -48,6 +58,19 @@ label::after {
     align-items: center;
     flex-direction: column;
     flex-grow: 0;
+}
+
+input.range {
+    width: 50px;
+}
+
+input.rangeedit {
+    width: 2em;
+}
+
+input.invalid {
+    color: white;
+    background-color: crimson;
 }
 
 #error {

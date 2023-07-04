@@ -9,6 +9,9 @@ export default class App extends PixelCanvas {
       errorId,
       '/shaders/main.vert',
       '/shaders/main.frag',
+      800,
+      600,
+      10.0,
     );
   }
 
@@ -17,14 +20,18 @@ export default class App extends PixelCanvas {
 
     this.addValue('fixedRef', 'uFixedRef', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
-    this.addValue('refPosition', 'uRefPosition', '2d', [0.0, 0.0]);
+    this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', 3);
-    this.addValue('distFactor', 'uDistFactor', 'float', 0.25);
+    this.addValue('distFactor', 'uDistFactor', 'range', 0.25);
     this.addValue('points', 'uPoints', 'array2d', [
-      [4.0, 2.0],
-      [-6.0, 8.0],
-      [-8.0, -4.0],
-      [2.0, -6.0],
+      // [4.0, 2.0],
+      // [-6.0, 8.0],
+      // [-8.0, -4.0],
+      // [2.0, -6.0],
+      [0.4, 0.2],
+      [-0.6, 0.8],
+      [-0.8, -0.4],
+      [0.2, -0.6],
     ]);
 
     const canvas = this.getCanvas();
@@ -61,5 +68,15 @@ export default class App extends PixelCanvas {
       ],
     });
     this.addControl('showGrid', 'Show Grid', {});
+    this.addControl('distFactor', 'Distance Scale', {
+      min: 0.01,
+      max: 10.0,
+      step: 0.01,
+    });
+    this.addViewportControl('View Range', {
+      min: 1.0,
+      max: 10.0,
+      step: 1.0,
+    });
   }
 } // App

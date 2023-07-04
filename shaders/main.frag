@@ -216,14 +216,14 @@ void main(void) {
     int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
     vec2 nearestPos = getPointPos(nearestIx);
     vec4 nearestColor = nearestIx < 0 ? vec4(1., 1., 0., 1.) : vec4(0., 1., 1., 1.);
-    gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 3);
+    gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
 
     // Projected Dots
     int projIx = getClosestIx(DF_COS, vPos, true);
     vec2 projPos = getPointPos(projIx);
     projPos /= card(projPos);
     vec4 projColor = projIx < 0 ? vec4(.5, 1., .5, 1.) : vec4(1., .5, .5, 1.);
-    gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 3);
+    gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
 
     // Grid
     if(uShowGrid != 0) {

@@ -7,9 +7,19 @@ import {
 } from './misc.js';
 
 export default class PixelCanvas {
-  constructor(canvasId, topbarId, errorId, vertexShader, fragmentShader) {
-    this.maxY = 10.0;
-    this.unitY = 0.01;
+  constructor(
+    canvasId,
+    topbarId,
+    errorId,
+    vertexShader,
+    fragmentShader,
+    width,
+    height,
+    initMaxY,
+  ) {
+    this.maxY = initMaxY;
+    this.width = width;
+    this.height = height;
     this.vertexShader = vertexShader;
     this.fragmentShader = fragmentShader;
     this.canvasId = canvasId;
@@ -17,7 +27,7 @@ export default class PixelCanvas {
     this.errorId = errorId;
     this.canvas = null;
     this.gl = null;
-    this.measures = {};
+    this.measures = null;
     this.buffers = {};
     this.programInfo = {
       program: null,
@@ -29,11 +39,17 @@ export default class PixelCanvas {
   }
 
   init() {
-    const canvas = document.querySelector(this.canvasId);
-    if (canvas === null) {
-      this.writeError(`Unable to find canvas '${this.canvasId}'.`);
+    const canvasDiv = document.querySelector(this.canvasId);
+    if (canvasDiv === null) {
+      this.writeError(`Unable to find canvas container '${this.canvasId}'.`);
       return;
     }
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('width', this.width);
+    canvas.setAttribute('height', this.height);
+    canvas.style.width = `${this.width}px`;
+    canvas.style.height = `${this.height}px`;
+    canvasDiv.appendChild(canvas);
     const gl = canvas.getContext('webgl2');
     if (gl === null) {
       this.writeError(
@@ -63,7 +79,37 @@ export default class PixelCanvas {
     return this.values;
   }
 
+  computeMeasures() {
+    const gl = this.getGL();
+    const width = gl.canvas.clientWidth;
+    const height = gl.canvas.clientHeight;
+    const maxY = this.maxY;
+    const superSampling = 4.0;
+    const unitY = (maxY * 2.0) / height / superSampling;
+    const maxX = (maxY / height) * width;
+    const unitX = (unitY / height) * width;
+    const sizeX = maxX / unitX;
+    const sizeY = maxY / unitY;
+    const blockX = sizeX / maxX;
+    const blockY = sizeY / maxY;
+    return {
+      width,
+      height,
+      maxX,
+      maxY,
+      unitX,
+      unitY,
+      sizeX,
+      sizeY,
+      blockX,
+      blockY,
+    };
+  }
+
   getMeasures() {
+    if (this.measures === null) {
+      throw new Error('measures are not initialized');
+    }
     return this.measures;
   }
 
@@ -97,44 +143,112 @@ export default class PixelCanvas {
     return vtype;
   }
 
-  addControl(name, prettyName, info) {
-    const curValue = this.getValues()[name];
-    const type = this.getValueType(name);
-    const topbar = document.querySelector(this.topbarId);
-    const fullName = `value_${name}`;
-    let elem;
+  addGenericControl(fullName, prettyName, type, initValue, setValue, info) {
+    const label = document.createElement('label');
+    label.setAttribute('for', fullName);
+    label.textContent = prettyName;
+    const elemType = {
+      enum: 'select',
+      bool: 'input',
+      range: 'input',
+    }[type];
+    if (!elemType) {
+      throw new Error(
+        `unsupported type ${type} for ${fullName} (${shaderName})`,
+      );
+    }
+    const elem = document.createElement(elemType);
+    elem.classList.add(type);
+    elem.setAttribute('id', fullName);
+    elem.setAttribute('name', fullName);
+    const div = document.createElement('div');
+    div.appendChild(label);
+    div.appendChild(elem);
     if (type === 'enum') {
-      elem = document.createElement('select');
       info.options.forEach(({ value, text }) => {
         const option = document.createElement('option');
         option.setAttribute('value', value);
         option.textContent = text;
         elem.appendChild(option);
       });
-      elem.value = curValue;
+      elem.value = initValue;
       elem.addEventListener('change', () => {
         const newValue = +elem.value;
-        this.updateValue({ [name]: newValue });
+        setValue(newValue);
       });
     } else if (type === 'bool') {
-      elem = document.createElement('input');
       elem.setAttribute('type', 'checkbox');
-      elem.checked = curValue;
+      elem.checked = initValue;
       elem.addEventListener('change', () => {
-        this.updateValue({ [name]: elem.checked });
+        setValue(elem.checked);
       });
+    } else if (type === 'range') {
+      const maxValue = info['max'];
+      const minValue = info['min'];
+      const step = info['step'] || 1;
+      elem.setAttribute('type', 'range');
+      elem.setAttribute('min', minValue);
+      elem.setAttribute('max', maxValue);
+      elem.setAttribute('step', step);
+      const edit = document.createElement('input');
+      edit.setAttribute('type', 'text');
+      edit.classList.add('rangeedit');
+      edit.value = initValue;
+      elem.value = initValue;
+      edit.addEventListener('change', () => {
+        const evalue = +edit.value;
+        if (Number.isFinite(evalue)) {
+          setValue(evalue);
+          elem.value = evalue;
+          edit.classList.remove('invalid');
+        } else {
+          edit.classList.add('invalid');
+        }
+      });
+      elem.addEventListener('input', () => {
+        const evalue = +edit.value;
+        const rvalue = +elem.value;
+        if (evalue !== rvalue) {
+          setValue(rvalue);
+          edit.value = rvalue;
+        }
+      });
+      div.appendChild(edit);
     } else {
-      throw new Error(`unsupported type ${type} for ${name} (${shaderName})`);
+      throw new Error(
+        `unsupported type ${type} for ${fullName} (${shaderName})`,
+      );
     }
-    elem.setAttribute('id', fullName);
-    elem.setAttribute('name', fullName);
-    const label = document.createElement('label');
-    label.setAttribute('for', fullName);
-    label.textContent = prettyName;
-    const div = document.createElement('div');
-    div.appendChild(label);
-    div.appendChild(elem);
+    const topbar = document.querySelector(this.topbarId);
     topbar.appendChild(div);
+  }
+
+  addViewportControl(prettyName, info) {
+    this.addGenericControl(
+      'maxY',
+      prettyName,
+      'range',
+      this.maxY,
+      (value) => {
+        this.maxY = value;
+        this.setupScene();
+      },
+      info,
+    );
+  }
+
+  addControl(name, prettyName, info) {
+    const curValue = this.getValues()[name];
+    const type = this.getValueType(name);
+    const fullName = `value_${name}`;
+    this.addGenericControl(
+      fullName,
+      prettyName,
+      type,
+      curValue,
+      (value) => this.updateValue({ [name]: value }),
+      info,
+    );
   }
 
   async loadShader(type, path) {
@@ -174,16 +288,6 @@ export default class PixelCanvas {
 
   async setupScene() {
     const gl = this.getGL();
-    const width = gl.canvas.clientWidth;
-    const height = gl.canvas.clientHeight;
-    const maxY = this.maxY;
-    const unitY = this.unitY;
-    const maxX = (maxY / height) * width;
-    const unitX = (unitY / height) * width;
-    const sizeX = maxX / unitX;
-    const sizeY = maxY / unitY;
-    const blockX = sizeX / maxX;
-    const blockY = sizeY / maxY;
     const shaderProgram = await this.initShaderProgram(
       this.vertexShader,
       this.fragmentShader,
@@ -192,22 +296,11 @@ export default class PixelCanvas {
       return;
     }
 
-    this.measures = {
-      ...this.measures,
-      width,
-      height,
-      maxX,
-      maxY,
-      unitX,
-      unitY,
-      sizeX,
-      sizeY,
-      blockX,
-      blockY,
-    };
+    this.measures = this.computeMeasures();
+    const measures = this.getMeasures();
     this.buffers = {
       ...this.buffers,
-      position: initPositionBuffer(gl, this.measures),
+      position: initPositionBuffer(gl, measures),
     };
     this.programInfo.program = shaderProgram;
     const { attribLocations, uniformLocations } = this.programInfo;
@@ -324,7 +417,7 @@ export default class PixelCanvas {
     valueDefs.forEach(({ name, type }) => {
       if (type === '2d') {
         gl.uniform2fv(programInfo.uniformLocations[name], values[name]);
-      } else if (type === 'float') {
+      } else if (['float', 'range'].includes(type)) {
         gl.uniform1f(programInfo.uniformLocations[name], values[name]);
       } else if (['int', 'bool', 'enum'].includes(type)) {
         gl.uniform1i(programInfo.uniformLocations[name], values[name]);
