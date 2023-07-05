@@ -46,8 +46,35 @@ export function writeMessage(parentId, msg) {
   });
 }
 
+export async function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      resolve(image);
+    };
+    image.onerror = (e) => {
+      reject(e);
+    };
+    image.src = url;
+  });
+}
+
+export function loadTexFile(gl, ix, locationTexture, locationSize, image) {
+  const texture = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + ix);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  gl.uniform1i(locationTexture, ix);
+  gl.uniform2fv(locationSize, [+image.width, +image.height]);
+}
+
 export function loadAsTex(
   gl,
+  ix,
   locationTexture,
   locationSize,
   locationCount,
@@ -71,7 +98,12 @@ export function loadAsTex(
     writeData(1.0);
   });
   const texture = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + ix);
   gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
@@ -83,11 +115,7 @@ export function loadAsTex(
     gl.FLOAT,
     data,
   );
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.uniform1i(locationTexture, texture);
+  gl.uniform1i(locationTexture, ix);
   gl.uniform1i(locationSize, size);
   gl.uniform1i(locationCount, count);
 }

@@ -1,16 +1,22 @@
 precision highp float;
 
 uniform highp vec2 uUnit;
+uniform highp vec2 uScreenSize;
 uniform highp vec2 uRefPosition;
 uniform highp float uDistFactor;
 uniform int uFixedRef;
 uniform int uShowGrid;
 uniform int uDistanceFn;
+
 uniform sampler2D uPointsTex;
 uniform int uPointsSize;
 uniform int uPointsCount;
 
+uniform sampler2D uWMTex;
+uniform vec2 uWMSize;
+
 varying highp vec2 vPos;
+varying highp vec2 sPos;
 
 #define PI 3.141592653589793238462643383279502884
 #define MAX_LOOP 100
@@ -167,6 +173,22 @@ float countBoundary(int distanceFn, vec2 pos, int distance, bool includeRef) {
     return count / float(total);
 }
 
+float countSelf(int distanceFn, vec2 pos, int distance, bool includeRef) {
+    float count = float(getClosestIx(distanceFn, pos, includeRef) < 0);
+    int total = 0;
+    for(int dist = 1; dist <= MAX_DIST; dist += 1) {
+        if(dist > distance) {
+            break;
+        }
+        for(int direction = M_START; direction < M_STOP; direction += 1) {
+            bool other = (getClosestIx(distanceFn, move(pos, direction, dist), includeRef) < 0);
+            count += float(other);
+            total += 1;
+        }
+    }
+    return count / float(total);
+}
+
 bool inRectangle(vec2 topLeft, vec2 bottomRight) {
     return (vPos.x >= topLeft.x) && (vPos.y >= topLeft.y) && (vPos.x <= bottomRight.x) && (vPos.y <= bottomRight.y);
 }
@@ -188,12 +210,24 @@ float countCircle(vec2 pos, float radius, int distance) {
     return count / float(total);
 }
 
+vec4 alphaMix(vec4 front, vec4 back) {
+    return vec4(mix(front.rgb, back.rgb, front.a), 1.0);
+}
+
 vec4 fillCircle(vec4 inColor, vec2 pos, float radius, vec4 color, int border) {
-    return mix(color, inColor, countCircle(pos, radius, border));
+    return alphaMix(vec4(color.rgb, color.a * countCircle(pos, radius, border)), inColor);
 }
 
 vec4 drawCircle(vec4 inColor, vec2 pos, float radius, vec4 color, int border) {
-    return mix(color, inColor, abs(countCircle(pos, radius, border) - .5) * 2.);
+    return alphaMix(vec4(color.rgb, color.a * abs(countCircle(pos, radius, border) - .5) * 2.), inColor);
+}
+
+vec4 waterColor(vec2 pos) {
+    float iRatio = uWMSize.y / uWMSize.x;
+    float iScale = uWMSize.x * 0.5;
+    vec2 wmFull = vec2(iRatio, -1.) * sPos / iScale;
+    vec2 sConv = uScreenSize / uWMSize / 4.;
+    return texture2D(uWMTex, wmFull - vec2(-.5) - pos * sConv);
 }
 
 void main(void) {
@@ -203,14 +237,18 @@ void main(void) {
     vec2 closest = getClosest(distanceFn, vPos, true);
     int closestIx = getIx(closest);
     float distNorm = clamp(getDist(closest), 0., 1.);
-    gl_FragColor = (closestIx < 0) ? vec4(.5, .5, distNorm, 1.) : vec4(distNorm, distNorm, distNorm, 1.);
+    gl_FragColor = (closestIx < 0) ? vec4(.5, .5, distNorm, 1.) : vec4(vec3(distNorm), 1.);
 
     // Unit Circle
     gl_FragColor = drawCircle(gl_FragColor, vec2(0.), 1., vec4(0., 1., 0., 1.), 5);
 
-    // Boundaries
+    // Closest Boundaries
     float crossings = countBoundary(distanceFn, vPos, 5, true);
-    gl_FragColor = mix(vec4(1., 0., 0., 1.), gl_FragColor, crossings);
+    gl_FragColor = alphaMix(vec4(1., 0., 0., 1. * crossings), gl_FragColor);
+
+    // Self Boundaries
+    // float selfCrossings = countSelf(distanceFn, vPos, 5, true);
+    // gl_FragColor = mix(vec4(0., 0., 1., 1.), gl_FragColor, selfCrossings);
 
     // Point Dots
     int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
@@ -225,10 +263,23 @@ void main(void) {
     vec4 projColor = projIx < 0 ? vec4(.5, 1., .5, 1.) : vec4(1., .5, .5, 1.);
     gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
 
+    // Watermark
+    vec4 wmColorA = waterColor(vec2(.5, .5));
+    wmColorA.rb = -wmColorA.rb;
+    gl_FragColor.rgb = clamp(wmColorA.rgb * .1 + gl_FragColor.rgb, vec3(0.), vec3(1.));
+
+    vec4 wmColorB = waterColor(vec2(-.7, .7));
+    wmColorB.rg = -wmColorB.rg;
+    gl_FragColor.rgb = clamp(wmColorB.rgb * .1 + gl_FragColor.rgb, vec3(0.), vec3(1.));
+
+    vec4 wmColorC = waterColor(vec2(-.4, -.6));
+    wmColorC.gb = -wmColorC.gb;
+    gl_FragColor.rgb = clamp(wmColorC.rgb * .1 + gl_FragColor.rgb, vec3(0.), vec3(1.));
+
     // Grid
     if(uShowGrid != 0) {
         if((mod(vPos.x, 2.0) < 1.0) != mod(vPos.y, 2.0) < 1.0) {
-            gl_FragColor.xyz = 1.0 - gl_FragColor.xyz;
+            gl_FragColor.rgb = 1.0 - gl_FragColor.rgb;
         }
     }
 }

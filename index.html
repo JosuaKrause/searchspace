@@ -16,12 +16,13 @@
             <div class="vmain">
                 <div id="topbar" class="topbar"></div>
                 <div id="main" class="main"></div>
+                <div id="bottombar" class="bottombar"></div>
             </div>
         </div>
         <div id="error"></div>
     </body>
     <script type="module">
     import App from "./js/app.js";
-    new App('#main', '#topbar', '#error').init();
+    new App('#main', '#topbar', '#bottombar', '#error').init();
     </script>
 </html>

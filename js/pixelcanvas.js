@@ -1,6 +1,7 @@
 import {
   initPositionBuffer,
   loadAsTex,
+  loadTexFile,
   loadText,
   setPositionAttribute,
   writeMessage,
@@ -10,6 +11,7 @@ export default class PixelCanvas {
   constructor(
     canvasId,
     topbarId,
+    bottombarId,
     errorId,
     vertexShader,
     fragmentShader,
@@ -24,6 +26,7 @@ export default class PixelCanvas {
     this.fragmentShader = fragmentShader;
     this.canvasId = canvasId;
     this.topbarId = topbarId;
+    this.bottombarId = bottombarId;
     this.errorId = errorId;
     this.canvas = null;
     this.gl = null;
@@ -59,20 +62,19 @@ export default class PixelCanvas {
     }
     this.canvas = canvas;
     this.gl = gl;
-    try {
-      this.setup();
-    } catch (err) {
-      console.error(err);
-      this.writeError(err);
-    }
-    this.setupScene().catch((err) => {
+    this.runSetup().catch((err) => {
       console.error(err);
       this.writeError(err);
     });
   }
 
-  setup() {
+  async setup() {
     // overwrite in sub-class
+  }
+
+  async runSetup() {
+    await this.setup();
+    await this.setupScene();
   }
 
   getValues() {
@@ -318,14 +320,13 @@ export default class PixelCanvas {
       'uModelViewMatrix',
     );
     uniformLocations.unit = gl.getUniformLocation(shaderProgram, 'uUnit');
+    uniformLocations.screenSize = gl.getUniformLocation(
+      shaderProgram,
+      'uScreenSize',
+    );
 
     this.valueDefs.forEach(({ name, shaderName, type }) => {
-      if (type !== 'array2d') {
-        uniformLocations[name] = gl.getUniformLocation(
-          shaderProgram,
-          shaderName,
-        );
-      } else {
+      if (type === 'array2d') {
         uniformLocations[`${name}Tex`] = gl.getUniformLocation(
           shaderProgram,
           `${shaderName}Tex`,
@@ -337,6 +338,20 @@ export default class PixelCanvas {
         uniformLocations[`${name}Count`] = gl.getUniformLocation(
           shaderProgram,
           `${shaderName}Count`,
+        );
+      } else if (type === 'image') {
+        uniformLocations[`${name}Tex`] = gl.getUniformLocation(
+          shaderProgram,
+          `${shaderName}Tex`,
+        );
+        uniformLocations[`${name}Size`] = gl.getUniformLocation(
+          shaderProgram,
+          `${shaderName}Size`,
+        );
+      } else {
+        uniformLocations[name] = gl.getUniformLocation(
+          shaderProgram,
+          shaderName,
         );
       }
     });
@@ -399,36 +414,39 @@ export default class PixelCanvas {
       return;
     }
     gl.useProgram(programInfo.program);
-    gl.uniformMatrix4fv(
-      programInfo.uniformLocations.projectionMatrix,
-      false,
-      projectionMatrix,
-    );
-    gl.uniformMatrix4fv(
-      programInfo.uniformLocations.modelViewMatrix,
-      false,
-      modelViewMatrix,
-    );
-    gl.uniform2fv(programInfo.uniformLocations.unit, [
-      measures.unitX,
-      measures.unitY,
-    ]);
+    const pul = programInfo.uniformLocations;
+    gl.uniformMatrix4fv(pul.projectionMatrix, false, projectionMatrix);
+    gl.uniformMatrix4fv(pul.modelViewMatrix, false, modelViewMatrix);
+    gl.uniform2fv(pul.screenSize, [measures.sizeX, measures.sizeY]);
+    gl.uniform2fv(pul.unit, [measures.unitX, measures.unitY]);
 
+    let texIx = 0;
     valueDefs.forEach(({ name, type }) => {
       if (type === '2d') {
-        gl.uniform2fv(programInfo.uniformLocations[name], values[name]);
+        gl.uniform2fv(pul[name], values[name]);
       } else if (['float', 'range'].includes(type)) {
-        gl.uniform1f(programInfo.uniformLocations[name], values[name]);
+        gl.uniform1f(pul[name], values[name]);
       } else if (['int', 'bool', 'enum'].includes(type)) {
-        gl.uniform1i(programInfo.uniformLocations[name], values[name]);
+        gl.uniform1i(pul[name], values[name]);
       } else if (type === 'array2d') {
         loadAsTex(
           gl,
-          programInfo.uniformLocations[`${name}Tex`],
-          programInfo.uniformLocations[`${name}Size`],
-          programInfo.uniformLocations[`${name}Count`],
+          texIx,
+          pul[`${name}Tex`],
+          pul[`${name}Size`],
+          pul[`${name}Count`],
           values[name],
         );
+        texIx += 1;
+      } else if (type === 'image') {
+        loadTexFile(
+          gl,
+          texIx,
+          pul[`${name}Tex`],
+          pul[`${name}Size`],
+          values[name],
+        );
+        texIx += 1;
       } else {
         this.writeError(
           `unsupported type ${type} for ${name} (${shaderName})`,
@@ -441,6 +459,25 @@ export default class PixelCanvas {
       const vertexCount = 4;
       gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
     }
+  }
+
+  addCapture(text) {
+    const btn = document.createElement('input');
+    btn.setAttribute('type', 'button');
+    btn.value = text;
+    btn.addEventListener('click', () => {
+      const canvas = this.getCanvas();
+      this.doDraw();
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = 'screen.png';
+      link.href = url;
+      // document.body.appendChild(link);
+      link.click();
+      // document.body.removeChild(link);
+    });
+    const bottombar = document.querySelector(this.bottombarId);
+    bottombar.appendChild(btn);
   }
 
   writeError(msg) {

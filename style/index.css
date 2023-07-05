@@ -40,6 +40,18 @@ canvas {
     margin-right: 5px;
 }
 
+.bottombar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: start;
+    margin: 5px;
+    width: 100%;
+}
+
+.bottombar>div {
+    margin-right: 5px;
+}
+
 .topbar label {
     vertical-align: top;
 }
