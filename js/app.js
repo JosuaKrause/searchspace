@@ -1,3 +1,4 @@
+import ConvexHull from './convex.js';
 import { convertMousePosition, loadImage } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
@@ -14,6 +15,7 @@ export default class App extends PixelCanvas {
       600,
       1.0,
     );
+    this.ch = new ConvexHull();
   }
 
   async setup() {
@@ -24,7 +26,7 @@ export default class App extends PixelCanvas {
     this.addValue('fixedRef', 'uFixedRef', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
-    this.addValue('distanceFn', 'uDistanceFn', 'enum', 3);
+    this.addValue('distanceFn', 'uDistanceFn', 'enum', 2);
     this.addValue('distFactor', 'uDistFactor', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', [
       // [4.0, 2.0],
@@ -32,10 +34,13 @@ export default class App extends PixelCanvas {
       // [-8.0, -4.0],
       // [2.0, -6.0],
       [0.4, 0.2],
-      [-0.6, 0.8],
+      [-0.5, 0.8],
       [-0.8, -0.4],
       [0.2, -0.6],
+      [0.3, 0.3],
+      [-0.4, 0.2],
     ]);
+    this.addValue('outline', 'uOutline', 'array2d', []);
 
     const canvas = this.getCanvas();
     canvas.addEventListener('mousemove', (e) => {
@@ -82,5 +87,10 @@ export default class App extends PixelCanvas {
       step: 1.0,
     });
     this.addCapture('Save');
+  }
+
+  prerender(values) {
+    values.outline = this.ch.createLinesArray(values.points);
+    return values;
   }
 } // App

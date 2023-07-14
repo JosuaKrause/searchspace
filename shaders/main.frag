@@ -12,13 +12,16 @@ uniform sampler2D uPointsTex;
 uniform int uPointsSize;
 uniform int uPointsCount;
 
+uniform sampler2D uOutlineTex;
+uniform int uOutlineSize;
+uniform int uOutlineCount;
+
 uniform sampler2D uWMTex;
 uniform vec2 uWMSize;
 
 varying highp vec2 vPos;
 varying highp vec2 sPos;
 
-#define PI 3.141592653589793238462643383279502884
 #define MAX_LOOP 100
 #define MAX_DIST 5
 
@@ -62,7 +65,7 @@ float normLog(float v) {
 }
 
 float normAtan(float v) {
-    return 2. * atan(v) / PI;
+    return degrees(atan(v) / 90.);
 }
 
 float sumAll(vec2 v) {
@@ -77,6 +80,30 @@ float l2Dist(vec2 a, vec2 b) {
 float l1Dist(vec2 a, vec2 b) {
     vec2 res = abs(a - b);
     return sumAll(res);
+}
+
+float det(vec2 a, vec2 b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+int crossingsForLine(vec2 p, vec2 from, vec2 to) {
+    if(p.y < from.y && p.y < to.y) {
+        return 0;
+    }
+    if(p.y >= from.y && p.y >= to.y) {
+        return 0;
+    }
+    if(p.x >= from.x && p.x >= to.x) {
+        return 0;
+    }
+    if(p.x < from.x && p.x < to.x) {
+        return (from.y < to.y) ? 1 : -1;
+    }
+    float intercept = from.x + (p.y - from.y) * (to.x - from.x) / (to.y - from.y);
+    if(p.x >= intercept) {
+        return 0;
+    }
+    return (from.y < to.y) ? 1 : -1;
 }
 
 float getDistance(int distanceFn, vec2 a, vec2 b) {
@@ -105,6 +132,16 @@ vec2 getPointPos(int ix) {
     return texture2D(uPointsTex, vec2(xpos, ypos)).xy;
 }
 
+vec2 getOutlinePoint(int ix) {
+    if(ix < 0) {
+        ix += uOutlineCount;
+    }
+    float size = float(uOutlineSize);
+    float xpos = (mod(float(ix), size) + .5) / size;
+    float ypos = (floor(float(ix) / size) + .5) / size;
+    return texture2D(uOutlineTex, vec2(xpos, ypos)).xy;
+}
+
 vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
     float distNorm = 1.;
     int closestIx = -1;
@@ -118,7 +155,8 @@ vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
         }
         vec2 ref = getPointPos(ix);
         float curDist = getDistance(distanceFn, pos, ref);
-        if(curDist < distNorm) {
+        float eps = 1e-5;  // making sure imprecisions don't fuzz results
+        if(curDist + eps < distNorm) {
             distNorm = curDist;
             closestIx = ix;
         }
@@ -138,9 +176,9 @@ float getDist(vec2 distAndIx) {
     return distAndIx.x;
 }
 
-vec2 move(vec2 pos, int direction, int distance) {
+vec2 move(vec2 pos, int direction, int step) {
     vec2 vout = pos;
-    vec2 unit = uUnit * float(distance);
+    vec2 unit = uUnit * float(step);
     if(direction == M_TOP_RIGHT || direction == M_RIGHT || direction == M_BOTTOM_RIGHT) {
         vout.x += unit.x;
     }
@@ -156,16 +194,16 @@ vec2 move(vec2 pos, int direction, int distance) {
     return vout;
 }
 
-float countBoundary(int distanceFn, vec2 pos, int distance, bool includeRef) {
+float countBoundary(int distanceFn, vec2 pos, int border, bool includeRef) {
     int center = getClosestIx(distanceFn, pos, includeRef);
     float count = 0.0;
     int total = 0;
-    for(int dist = 1; dist <= MAX_DIST; dist += 1) {
-        if(dist > distance) {
+    for(int bord = 1; bord <= MAX_DIST; bord += 1) {
+        if(bord > border) {
             break;
         }
         for(int direction = M_START; direction < M_STOP; direction += 1) {
-            int other = getClosestIx(distanceFn, move(pos, direction, dist), includeRef);
+            int other = getClosestIx(distanceFn, move(pos, direction, bord), includeRef);
             count += float(center == other);
             total += 1;
         }
@@ -173,16 +211,30 @@ float countBoundary(int distanceFn, vec2 pos, int distance, bool includeRef) {
     return count / float(total);
 }
 
-float countSelf(int distanceFn, vec2 pos, int distance, bool includeRef) {
-    float count = float(getClosestIx(distanceFn, pos, includeRef) < 0);
+bool isHidden(vec2 pos) {
+    int crossings = 0;
+    vec2 prev = getOutlinePoint(-1);
+    for(int ix = 0; ix < MAX_LOOP; ix += 1) {
+        if(ix >= uOutlineCount) {
+            break;
+        }
+        vec2 cur = getOutlinePoint(ix);
+        crossings += crossingsForLine(pos, prev, cur);
+        prev = cur;
+    }
+    return int(mod(abs(float(crossings)), 2.)) != 0;
+}
+
+float countHidden(vec2 pos, int border) {
+    bool refHidden = isHidden(pos);
+    float count = 0.;
     int total = 0;
-    for(int dist = 1; dist <= MAX_DIST; dist += 1) {
-        if(dist > distance) {
+    for(int bord = 1; bord <= MAX_DIST; bord += 1) {
+        if(bord > border) {
             break;
         }
         for(int direction = M_START; direction < M_STOP; direction += 1) {
-            bool other = (getClosestIx(distanceFn, move(pos, direction, dist), includeRef) < 0);
-            count += float(other);
+            count += float(refHidden != isHidden(move(pos, direction, bord)));
             total += 1;
         }
     }
@@ -193,16 +245,16 @@ bool inRectangle(vec2 topLeft, vec2 bottomRight) {
     return (vPos.x >= topLeft.x) && (vPos.y >= topLeft.y) && (vPos.x <= bottomRight.x) && (vPos.y <= bottomRight.y);
 }
 
-float countCircle(vec2 pos, float radius, int distance) {
+float countCircle(vec2 pos, float radius, int border) {
     float count = 0.0;
     float rad2 = radius * radius;
     int total = 0;
-    for(int dist = 1; dist <= MAX_DIST; dist += 1) {
-        if(dist > distance) {
+    for(int bord = 1; bord <= MAX_DIST; bord += 1) {
+        if(bord > border) {
             break;
         }
         for(int direction = M_START; direction < M_STOP; direction += 1) {
-            vec2 curDiff = move(pos, direction, dist) - vPos;
+            vec2 curDiff = move(pos, direction, bord) - vPos;
             count += float((dot(curDiff, curDiff) > rad2));
             total += 1;
         }
@@ -246,9 +298,10 @@ void main(void) {
     float crossings = countBoundary(distanceFn, vPos, 5, true);
     gl_FragColor = alphaMix(vec4(1., 0., 0., 1. * crossings), gl_FragColor);
 
-    // Self Boundaries
-    // float selfCrossings = countSelf(distanceFn, vPos, 5, true);
-    // gl_FragColor = mix(vec4(0., 0., 1., 1.), gl_FragColor, selfCrossings);
+    // Hidden Boundaries
+    float hiddenCrossings = countHidden(vPos, 5);
+    gl_FragColor = alphaMix(vec4(0., 0., 1., 1. * (1. - hiddenCrossings)), gl_FragColor);
+    // gl_FragColor = alphaMix(vec4(0., 0., 1., .5 + .5 * float(isHidden(vPos))), gl_FragColor);
 
     // Point Dots
     int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
