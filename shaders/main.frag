@@ -60,14 +60,6 @@ float cosDist(vec2 a, vec2 b) {
     return (1. - cos2d(a, b)) * .5;
 }
 
-float normLog(float v) {
-    return 1. - 1. / pow(2., log(1. + v));
-}
-
-float normAtan(float v) {
-    return degrees(atan(v) / 90.);
-}
-
 float sumAll(vec2 v) {
     return dot(v, vec2(1.));
 }
@@ -80,10 +72,6 @@ float l2Dist(vec2 a, vec2 b) {
 float l1Dist(vec2 a, vec2 b) {
     vec2 res = abs(a - b);
     return sumAll(res);
-}
-
-float det(vec2 a, vec2 b) {
-    return a.x * b.y - a.y * b.x;
 }
 
 int crossingsForLine(vec2 p, vec2 from, vec2 to) {
@@ -149,13 +137,13 @@ vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
         distNorm = getDistance(distanceFn, pos, uRefPosition);
         closestIx = -2;
     }
+    float eps = 1e-5;  // making sure imprecisions don't fuzz results
     for(int ix = 0; ix < MAX_LOOP; ix += 1) {
         if(ix >= uPointsCount) {
             break;
         }
         vec2 ref = getPointPos(ix);
         float curDist = getDistance(distanceFn, pos, ref);
-        float eps = 1e-5;  // making sure imprecisions don't fuzz results
         if(curDist + eps < distNorm) {
             distNorm = curDist;
             closestIx = ix;
@@ -239,10 +227,6 @@ float countHidden(vec2 pos, int border) {
         }
     }
     return count / float(total);
-}
-
-bool inRectangle(vec2 topLeft, vec2 bottomRight) {
-    return (vPos.x >= topLeft.x) && (vPos.y >= topLeft.y) && (vPos.x <= bottomRight.x) && (vPos.y <= bottomRight.y);
 }
 
 float countCircle(vec2 pos, float radius, int border) {
