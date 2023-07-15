@@ -4,6 +4,7 @@ import {
   loadAsTex,
   loadTexFile,
   loadText,
+  precision,
   setPositionAttribute,
   writeMessage,
 } from './misc.js';
@@ -44,6 +45,7 @@ export default class PixelCanvas {
     };
     this.values = {};
     this.valueDefs = [];
+    this.prerender = [];
     this.recordingState = NO_RECORDING;
   }
 
@@ -385,14 +387,16 @@ export default class PixelCanvas {
     this.doDraw();
   }
 
-  prerender(values) {
-    return values;
+  addPrerenderHook(cb) {
+    this.prerender.push(cb);
   }
 
   drawScene() {
     const gl = this.getGL();
     const measures = this.getMeasures();
-    const values = this.prerender({ ...this.getValues() });
+    const values = this.prerender.reduce((vals, cb) => ({ ...cb(vals) }), {
+      ...this.getValues(),
+    });
     const programInfo = this.programInfo;
     const buffers = this.buffers;
     const valueDefs = this.valueDefs;
@@ -469,6 +473,18 @@ export default class PixelCanvas {
       const vertexCount = 4;
       gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
     }
+  }
+
+  addCoords(name, text) {
+    const coord = document.createElement('div');
+    coord.classList.add('refcoord');
+    this.addPrerenderHook((values) => {
+      const [x, y] = values[name];
+      coord.textContent = `${text}: ${precision(x, 5)} ${precision(y, 5)}`;
+      return values;
+    });
+    const bottombar = document.querySelector(this.bottombarId);
+    bottombar.appendChild(coord);
   }
 
   addCapture(text, key) {

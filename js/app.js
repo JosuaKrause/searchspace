@@ -43,6 +43,10 @@ export default class App extends PixelCanvas {
       [-0.4, 0.2],
     ]);
     this.addValue('outline', 'uOutline', 'array2d', []);
+    this.addPrerenderHook((values) => {
+      values.outline = this.ch.createLinesArray(values.points);
+      return values;
+    });
 
     const canvas = this.getCanvas();
     canvas.addEventListener('mousemove', (e) => {
@@ -90,15 +94,15 @@ export default class App extends PixelCanvas {
       max: 10.0,
       step: 1.0,
     });
+
     this.addCapture('Save', 's');
     this.addVideoCapture('Record', 'Stop', 'j', 'k');
-  }
-
-  prerender(values) {
-    values.outline = this.ch.createLinesArray(values.points);
-    if (this.isRecording()) {
-      values.fixedRef = true;
-    }
-    return values;
+    this.addPrerenderHook((values) => {
+      if (this.isRecording()) {
+        values.fixedRef = true;
+      }
+      return values;
+    });
+    this.addCoords('refPosition', 'Pos');
   }
 } // App

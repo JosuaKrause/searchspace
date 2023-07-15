@@ -143,3 +143,7 @@ export function download(saveURL, name) {
   link.click();
   // document.body.removeChild(link);
 }
+
+export function precision(val, digits) {
+  return `${val >= 0 ? '\xA0' : ''}${val.toFixed(digits)}`;
+}
