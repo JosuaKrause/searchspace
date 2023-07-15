@@ -550,6 +550,7 @@ export default class PixelCanvas {
       };
 
       mediaRecorder.start();
+      that.doDraw();
     }
 
     function stopRecording() {
@@ -577,7 +578,7 @@ export default class PixelCanvas {
           return;
         }
         e.preventDefault();
-        startRecording();
+        countDown(3, startRecording);
       }
     });
     btn.addEventListener('click', () => {

@@ -91,7 +91,7 @@ export default class App extends PixelCanvas {
       step: 1.0,
     });
     this.addCapture('Save', 's');
-    this.addVideoCapture('Record', 'Stop', 'r', 'k');
+    this.addVideoCapture('Record', 'Stop', 'j', 'k');
   }
 
   prerender(values) {
