@@ -25,6 +25,8 @@ export default class App extends PixelCanvas {
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('fixedRef', 'uFixedRef', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
+    this.addValue('unitCircle', 'uUnitCircle', 'bool', true);
+    this.addValue('convexHull', 'uConvexHull', 'bool', true);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', 2);
     this.addValue('distFactor', 'uDistFactor', 'range', 2.5);
@@ -76,6 +78,8 @@ export default class App extends PixelCanvas {
       ],
     });
     this.addControl('showGrid', 'Show Grid', {});
+    this.addControl('unitCircle', 'Unit', {});
+    this.addControl('convexHull', 'CH', {});
     this.addControl('distFactor', 'Distance Scale', {
       min: 0.01,
       max: 10.0,

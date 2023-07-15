@@ -6,6 +6,8 @@ uniform highp vec2 uRefPosition;
 uniform highp float uDistFactor;
 uniform int uFixedRef;
 uniform int uShowGrid;
+uniform int uUnitCircle;
+uniform int uConvexHull;
 uniform int uDistanceFn;
 
 uniform sampler2D uPointsTex;
@@ -276,16 +278,19 @@ void main(void) {
     gl_FragColor = (closestIx < 0) ? vec4(.5, .5, distNorm, 1.) : vec4(vec3(distNorm), 1.);
 
     // Unit Circle
-    gl_FragColor = drawCircle(gl_FragColor, vec2(0.), 1., vec4(0., 1., 0., 1.), 5);
+    if(uUnitCircle != 0) {
+        gl_FragColor = drawCircle(gl_FragColor, vec2(0.), 1., vec4(0., 1., 0., 1.), 5);
+    }
 
     // Closest Boundaries
     float crossings = countBoundary(distanceFn, vPos, 5, true);
     gl_FragColor = alphaMix(vec4(1., 0., 0., 1. * crossings), gl_FragColor);
 
     // Hidden Boundaries
-    float hiddenCrossings = countHidden(vPos, 5);
-    gl_FragColor = alphaMix(vec4(0., 0., 1., 1. * (1. - hiddenCrossings)), gl_FragColor);
-    // gl_FragColor = alphaMix(vec4(0., 0., 1., .5 + .5 * float(isHidden(vPos))), gl_FragColor);
+    if(uConvexHull != 0) {
+        float hiddenCrossings = countHidden(vPos, 5);
+        gl_FragColor = alphaMix(vec4(0., 0., 1., 1. * (1. - hiddenCrossings)), gl_FragColor);
+    }
 
     // Point Dots
     int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
@@ -294,11 +299,13 @@ void main(void) {
     gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
 
     // Projected Dots
-    int projIx = getClosestIx(DF_COS, vPos, true);
-    vec2 projPos = getPointPos(projIx);
-    projPos /= card(projPos);
-    vec4 projColor = projIx < 0 ? vec4(.5, 1., .5, 1.) : vec4(1., .5, .5, 1.);
-    gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
+    if(uUnitCircle != 0) {
+        int projIx = getClosestIx(DF_COS, vPos, true);
+        vec2 projPos = getPointPos(projIx);
+        projPos /= card(projPos);
+        vec4 projColor = projIx < 0 ? vec4(.5, 1., .5, 1.) : vec4(1., .5, .5, 1.);
+        gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
+    }
 
     // Watermark
     vec4 wmColorA = waterColor(vec2(.5, .5));
