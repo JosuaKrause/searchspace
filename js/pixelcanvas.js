@@ -471,24 +471,38 @@ export default class PixelCanvas {
     }
   }
 
-  addCapture(text) {
+  addCapture(text, key) {
     const btn = document.createElement('input');
     btn.setAttribute('type', 'button');
-    btn.value = text;
-    btn.addEventListener('click', () => {
-      const canvas = this.getCanvas();
-      this.doDraw();
+    btn.value = `${text} (${key})`;
+    const that = this;
+
+    function save() {
+      const canvas = that.getCanvas();
+      that.doDraw();
       const imageURL = canvas.toDataURL('image/png');
       download(imageURL, 'screen.png');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() !== key) {
+        return;
+      }
+      e.preventDefault();
+      save();
+    });
+    btn.addEventListener('click', () => {
+      save();
     });
     const bottombar = document.querySelector(this.bottombarId);
     bottombar.appendChild(btn);
   }
 
-  addVideoCapture(startText, stopText, stopKey) {
+  addVideoCapture(startText, stopText, startKey, stopKey) {
     const btn = document.createElement('input');
     btn.setAttribute('type', 'button');
-    btn.value = startText;
+    const btnTextInit = `${startText} (${startKey})`;
+    btn.value = btnTextInit;
     const canvasDiv = document.querySelector(this.canvasId);
     const videoOverlay = document.createElement('div');
     videoOverlay.style.width = `${this.width}px`;
@@ -539,7 +553,7 @@ export default class PixelCanvas {
     }
 
     function stopRecording() {
-      btn.value = startText;
+      btn.value = btnTextInit;
       that.recordingState = NO_RECORDING;
 
       if (!mediaRecorder) {
@@ -552,14 +566,19 @@ export default class PixelCanvas {
     }
 
     window.addEventListener('keydown', (e) => {
-      if (this.recordingState !== IS_RECORDING) {
-        return;
+      if (this.recordingState === IS_RECORDING) {
+        if (e.key.toLowerCase() !== stopKey) {
+          return;
+        }
+        e.preventDefault();
+        stopRecording();
+      } else if (this.recordingState === NO_RECORDING) {
+        if (e.key.toLowerCase() !== startKey) {
+          return;
+        }
+        e.preventDefault();
+        startRecording();
       }
-      if (e.key.toLowerCase() !== stopKey) {
-        return;
-      }
-      e.preventDefault();
-      stopRecording();
     });
     btn.addEventListener('click', () => {
       if (this.recordingState === IS_RECORDING) {
