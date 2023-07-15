@@ -134,3 +134,12 @@ export function convertMousePosition(canvas, measures, e) {
   const orthoY = (-(pixelY - halfH) / halfH) * measures.maxY;
   return [orthoX, orthoY];
 }
+
+export function download(saveURL, name) {
+  const link = document.createElement('a');
+  link.download = name;
+  link.href = saveURL;
+  // document.body.appendChild(link);
+  link.click();
+  // document.body.removeChild(link);
+}

@@ -1,4 +1,5 @@
 import {
+  download,
   initPositionBuffer,
   loadAsTex,
   loadTexFile,
@@ -6,6 +7,10 @@ import {
   setPositionAttribute,
   writeMessage,
 } from './misc.js';
+
+const NO_RECORDING = 'no_recording';
+const COUNT_DOWN = 'count_down';
+const IS_RECORDING = 'is_recording';
 
 export default class PixelCanvas {
   constructor(
@@ -39,6 +44,7 @@ export default class PixelCanvas {
     };
     this.values = {};
     this.valueDefs = [];
+    this.recordingState = NO_RECORDING;
   }
 
   init() {
@@ -386,7 +392,7 @@ export default class PixelCanvas {
   drawScene() {
     const gl = this.getGL();
     const measures = this.getMeasures();
-    const values = this.prerender(this.getValues());
+    const values = this.prerender({ ...this.getValues() });
     const programInfo = this.programInfo;
     const buffers = this.buffers;
     const valueDefs = this.valueDefs;
@@ -472,16 +478,102 @@ export default class PixelCanvas {
     btn.addEventListener('click', () => {
       const canvas = this.getCanvas();
       this.doDraw();
-      const url = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = 'screen.png';
-      link.href = url;
-      // document.body.appendChild(link);
-      link.click();
-      // document.body.removeChild(link);
+      const imageURL = canvas.toDataURL('image/png');
+      download(imageURL, 'screen.png');
     });
     const bottombar = document.querySelector(this.bottombarId);
     bottombar.appendChild(btn);
+  }
+
+  addVideoCapture(startText, stopText, stopKey) {
+    const btn = document.createElement('input');
+    btn.setAttribute('type', 'button');
+    btn.value = startText;
+    const canvasDiv = document.querySelector(this.canvasId);
+    const videoOverlay = document.createElement('div');
+    videoOverlay.style.width = `${this.width}px`;
+    videoOverlay.style.height = `${this.height}px`;
+    videoOverlay.style.fontSize = `${this.height * 0.6}px`;
+    videoOverlay.classList.add('videocounter');
+    canvasDiv.appendChild(videoOverlay);
+    this.recordingState = NO_RECORDING;
+    const that = this;
+
+    function countDown(num, cb) {
+      that.recordingState = COUNT_DOWN;
+      if (num <= 0) {
+        videoOverlay.textContent = '';
+        cb();
+        return;
+      }
+      videoOverlay.textContent = `${num}`;
+      setTimeout(() => {
+        countDown(num - 1, cb);
+      }, 1000);
+    }
+
+    let videoStream = null;
+    let mediaRecorder = null;
+    let chunks = [];
+
+    function startRecording() {
+      btn.value = `${stopText} (${stopKey})`;
+      that.recordingState = IS_RECORDING;
+
+      const canvas = that.getCanvas();
+      videoStream = canvas.captureStream(60);
+      mediaRecorder = new MediaRecorder(videoStream);
+
+      chunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+      mediaRecorder.onstop = (e) => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        chunks = [];
+        const videoURL = URL.createObjectURL(blob);
+        download(videoURL, 'video.webm');
+      };
+
+      mediaRecorder.start();
+    }
+
+    function stopRecording() {
+      btn.value = startText;
+      that.recordingState = NO_RECORDING;
+
+      if (!mediaRecorder) {
+        return;
+      }
+      mediaRecorder.stop();
+      videoStream = null;
+      mediaRecorder = null;
+      chunks = [];
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (this.recordingState !== IS_RECORDING) {
+        return;
+      }
+      if (e.key.toLowerCase() !== stopKey) {
+        return;
+      }
+      e.preventDefault();
+      stopRecording();
+    });
+    btn.addEventListener('click', () => {
+      if (this.recordingState === IS_RECORDING) {
+        stopRecording();
+      } else if (this.recordingState === NO_RECORDING) {
+        countDown(3, startRecording);
+      }
+    });
+    const bottombar = document.querySelector(this.bottombarId);
+    bottombar.appendChild(btn);
+  }
+
+  isRecording() {
+    return this.recordingState === IS_RECORDING;
   }
 
   writeError(msg) {

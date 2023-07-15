@@ -17,6 +17,7 @@ label::after {
 }
 
 .main {
+    position: relative;
     border: 1px solid black;
     margin: 0;
     padding: 0;
@@ -83,6 +84,20 @@ input.rangeedit {
 input.invalid {
     color: white;
     background-color: crimson;
+}
+
+.videocounter {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    color: white;
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+    opacity: 75%;
+    pointer-events: none;
+    user-select: none;
 }
 
 #error {

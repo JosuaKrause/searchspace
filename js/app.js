@@ -91,10 +91,14 @@ export default class App extends PixelCanvas {
       step: 1.0,
     });
     this.addCapture('Save');
+    this.addVideoCapture('Record', 'Stop', 'k');
   }
 
   prerender(values) {
     values.outline = this.ch.createLinesArray(values.points);
+    if (this.isRecording()) {
+      values.fixedRef = true;
+    }
     return values;
   }
 } // App
