@@ -47,42 +47,114 @@ export default class PixelCanvas {
     this.valueDefs = [];
     this.prerender = [];
     this.recordingState = NO_RECORDING;
-  }
-
-  init() {
-    const canvasDiv = document.querySelector(this.canvasId);
-    if (canvasDiv === null) {
-      this.writeError(`Unable to find canvas container '${this.canvasId}'.`);
-      return;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.setAttribute('width', this.width);
-    canvas.setAttribute('height', this.height);
-    canvas.style.width = `${this.width}px`;
-    canvas.style.height = `${this.height}px`;
-    canvasDiv.appendChild(canvas);
-    const gl = canvas.getContext('webgl2');
-    if (gl === null) {
-      this.writeError(
-        'Unable to initialize WebGL 2. It might be not supported.',
-      );
-      return;
-    }
-    this.canvas = canvas;
-    this.gl = gl;
-    this.runSetup().catch((err) => {
-      console.error(err);
-      this.writeError(err);
-    });
+    this.isSetup = false;
+    this.isDrawing = false;
+    this.hidden = false;
   }
 
   async setup() {
-    // overwrite in sub-class
+    // overwrite in sub-class and call `await super.setup()` at the end
+    this.isSetup = true;
   }
 
-  async runSetup() {
-    await this.setup();
-    await this.setupScene();
+  isHidden() {
+    return this.hidden;
+  }
+
+  setHidden(hidden) {
+    if (this.hidden === hidden) {
+      return;
+    }
+    this.hidden = hidden;
+    if (hidden) {
+      this.clear();
+    } else {
+      this.repaint();
+    }
+  }
+
+  clear() {
+    if (this.isDrawing) {
+      requestAnimationFrame(() => {
+        this.clear();
+      });
+      return;
+    }
+    this.gl = null;
+    this.buffers = {};
+    this.programInfo = {
+      program: null,
+      attribLocations: {},
+      uniformLocations: {},
+    };
+  }
+
+  fullRepaint(cb) {
+    if (this.isDrawing) {
+      requestAnimationFrame(() => {
+        this.fullRepaint(cb);
+      });
+      return;
+    }
+    this.gl = null;
+    this.repaint(cb);
+  }
+
+  repaint(cb) {
+    if (this.isHidden()) {
+      return;
+    }
+    if (this.isDrawing) {
+      requestAnimationFrame(() => {
+        this.repaint(cb);
+      });
+      return;
+    }
+
+    const run = async () => {
+      if (this.canvas === null) {
+        const canvasDiv = document.querySelector(this.canvasId);
+        if (canvasDiv === null) {
+          this.writeError(
+            `Unable to find canvas container '${this.canvasId}'.`,
+          );
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('width', this.width);
+        canvas.setAttribute('height', this.height);
+        canvas.style.width = `${this.width}px`;
+        canvas.style.height = `${this.height}px`;
+        canvasDiv.appendChild(canvas);
+        this.canvas = canvas;
+      }
+      const needsSceneSetup = this.gl === null;
+      if (needsSceneSetup) {
+        await this.initScene();
+      }
+      if (!this.isSetup) {
+        await this.setup();
+        if (!this.isSetup) {
+          throw new Error('must call `await super.setup()` at end of setup!');
+        }
+      }
+      if (needsSceneSetup) {
+        await this.setupScene();
+      }
+      this.drawScene();
+      cb && cb();
+    };
+
+    this.isDrawing = true;
+    const finish = () => {
+      this.isDrawing = false;
+    };
+    const finishErr = (err) => {
+      finish();
+      console.error(err);
+      this.writeError(err);
+    };
+    run().then(finish).catch(finishErr);
   }
 
   getValues() {
@@ -131,6 +203,11 @@ export default class PixelCanvas {
   }
 
   getGL() {
+    if (!this.isDrawing) {
+      this.writeError(
+        'obtaining gl context while not drawing. this might be a bug!',
+      );
+    }
     if (!this.gl) {
       throw new Error('gl is not initialized');
     }
@@ -241,7 +318,7 @@ export default class PixelCanvas {
       this.maxY,
       (value) => {
         this.maxY = value;
-        this.setupScene();
+        this.fullRepaint();
       },
       info,
     );
@@ -296,8 +373,16 @@ export default class PixelCanvas {
     return shaderProgram;
   }
 
-  async setupScene() {
-    const gl = this.getGL();
+  async initScene() {
+    const canvas = this.getCanvas();
+    const gl = canvas.getContext('webgl2');
+    if (gl === null) {
+      this.writeError(
+        'Unable to initialize WebGL 2. It might be not supported.',
+      );
+      return;
+    }
+    this.gl = gl;
     const shaderProgram = await this.initShaderProgram(
       this.vertexShader,
       this.fragmentShader,
@@ -305,15 +390,23 @@ export default class PixelCanvas {
     if (shaderProgram === null) {
       return;
     }
-
+    this.programInfo.program = shaderProgram;
     this.measures = this.computeMeasures();
+  }
+
+  async setupScene() {
+    const gl = this.getGL();
     const measures = this.getMeasures();
     this.buffers = {
       ...this.buffers,
       position: initPositionBuffer(gl, measures),
     };
-    this.programInfo.program = shaderProgram;
-    const { attribLocations, uniformLocations } = this.programInfo;
+
+    const {
+      program: shaderProgram,
+      attribLocations,
+      uniformLocations,
+    } = this.programInfo;
 
     attribLocations.vertexPosition = gl.getAttribLocation(
       shaderProgram,
@@ -363,17 +456,6 @@ export default class PixelCanvas {
         );
       }
     });
-
-    this.doDraw();
-  }
-
-  doDraw() {
-    try {
-      this.drawScene();
-    } catch (err) {
-      console.error(err);
-      this.writeError(err);
-    }
   }
 
   updateValue(obj) {
@@ -384,7 +466,7 @@ export default class PixelCanvas {
       }
       values[key] = obj[key];
     });
-    this.doDraw();
+    this.repaint();
   }
 
   addPrerenderHook(cb) {
@@ -487,31 +569,24 @@ export default class PixelCanvas {
     bottombar.appendChild(coord);
   }
 
-  addCapture(text, key) {
+  addButton(text, key, cb) {
     const btn = document.createElement('input');
     btn.setAttribute('type', 'button');
-    btn.value = `${text} (${key})`;
-    const that = this;
-
-    function save() {
-      const canvas = that.getCanvas();
-      that.doDraw();
-      const imageURL = canvas.toDataURL('image/png');
-      download(imageURL, 'screen.png');
-    }
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() !== key) {
-        return;
-      }
-      e.preventDefault();
-      save();
-    });
-    btn.addEventListener('click', () => {
-      save();
-    });
+    btn.value = key ? `${text} (${key})` : text;
+    this.addClickEventListener(btn, key, cb);
     const bottombar = document.querySelector(this.bottombarId);
     bottombar.appendChild(btn);
+    return btn;
+  }
+
+  addCapture(text, key) {
+    this.addButton(text, key, () => {
+      this.repaint(() => {
+        const canvas = this.getCanvas();
+        const imageURL = canvas.toDataURL('image/png');
+        download(imageURL, 'screen.png');
+      });
+    });
   }
 
   addVideoCapture(startText, stopText, startKey, stopKey) {
@@ -566,7 +641,7 @@ export default class PixelCanvas {
       };
 
       mediaRecorder.start();
-      that.doDraw();
+      that.repaint();
     }
 
     function stopRecording() {
@@ -582,19 +657,14 @@ export default class PixelCanvas {
       chunks = [];
     }
 
-    window.addEventListener('keydown', (e) => {
-      if (this.recordingState === IS_RECORDING) {
-        if (e.key.toLowerCase() !== stopKey) {
-          return;
-        }
-        e.preventDefault();
-        stopRecording();
-      } else if (this.recordingState === NO_RECORDING) {
-        if (e.key.toLowerCase() !== startKey) {
-          return;
-        }
-        e.preventDefault();
+    this.addKeyEventListener(startKey, () => {
+      if (this.recordingState === NO_RECORDING) {
         countDown(3, startRecording);
+      }
+    });
+    this.addKeyEventListener(stopKey, () => {
+      if (this.recordingState === IS_RECORDING) {
+        stopRecording();
       }
     });
     btn.addEventListener('click', () => {
@@ -610,6 +680,29 @@ export default class PixelCanvas {
 
   isRecording() {
     return this.recordingState === IS_RECORDING;
+  }
+
+  addClickEventListener(btn, key, cb) {
+    btn.addEventListener('click', () => {
+      cb();
+    });
+    this.addKeyEventListener(key, cb);
+  }
+
+  addKeyEventListener(key, cb) {
+    if (!key) {
+      return;
+    }
+    const lowerKey = key.toLowerCase();
+    window.addEventListener('keydown', (e) => {
+      if (e.defaultPrevented) {
+        return;
+      }
+      if (e.key.toLowerCase() === lowerKey) {
+        e.preventDefault();
+        cb();
+      }
+    });
   }
 
   writeError(msg) {

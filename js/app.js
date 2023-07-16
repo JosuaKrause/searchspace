@@ -19,7 +19,6 @@ export default class App extends PixelCanvas {
   }
 
   async setup() {
-    await super.setup();
     const watermark = await loadImage('img/watermark.png');
 
     this.addValue('wm', 'uWM', 'image', watermark);
@@ -31,10 +30,6 @@ export default class App extends PixelCanvas {
     this.addValue('distanceFn', 'uDistanceFn', 'enum', 1); //2);
     this.addValue('distFactor', 'uDistFactor', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', [
-      // [4.0, 2.0],
-      // [-6.0, 8.0],
-      // [-8.0, -4.0],
-      // [2.0, -6.0],
       [0.4, 0.2],
       [-0.5, 0.8],
       [-0.8, -0.4],
@@ -95,14 +90,19 @@ export default class App extends PixelCanvas {
       step: 1.0,
     });
 
-    this.addCapture('Save', 's');
-    this.addVideoCapture('Record', 'Stop', 'j', 'k');
+    this.addCapture('Save', 'S');
+    this.addVideoCapture('Record', 'Stop', 'J', 'K');
     this.addPrerenderHook((values) => {
       if (this.isRecording()) {
         values.fixedRef = true;
       }
       return values;
     });
+    this.addButton('Hide', 'H', () => {
+      this.setHidden(!this.isHidden());
+    });
     this.addCoords('refPosition', 'Pos');
+
+    await super.setup();
   }
 } // App

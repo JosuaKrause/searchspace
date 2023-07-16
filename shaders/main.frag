@@ -215,7 +215,7 @@ float countBoundary(int distanceFn, vec2 pos, int border, bool includeRef) {
     return count / float(total);
 }
 
-bool isHidden(vec2 pos) {
+bool insideOutline(vec2 pos) {
     int crossings = 0;
     vec2 prev = getOutlinePoint(-1);
     for(int ix = 0; ix < MAX_LOOP; ix += 1) {
@@ -230,7 +230,7 @@ bool isHidden(vec2 pos) {
 }
 
 float countHidden(vec2 pos, int border) {
-    bool refHidden = isHidden(pos);
+    bool refInside = insideOutline(pos);
     float count = 0.;
     int total = 0;
     for(int bord = 1; bord <= MAX_DIST; bord += 1) {
@@ -238,7 +238,7 @@ float countHidden(vec2 pos, int border) {
             break;
         }
         for(int direction = M_START; direction < M_STOP; direction += 1) {
-            count += float(refHidden != isHidden(move(pos, direction, bord)));
+            count += float(refInside != insideOutline(move(pos, direction, bord)));
             total += 1;
         }
     }
