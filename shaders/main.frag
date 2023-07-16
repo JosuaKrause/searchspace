@@ -46,19 +46,19 @@ varying highp vec2 sPos;
 #define DF_DOT 2
 #define DF_COS 3
 
-const vec4 COLOR_DIST_NEAR = vec4(.3867, .3867, .3867, 1.);
-const vec4 COLOR_DIST_FAR = vec4(.9375, .9375, .9375, 1.);
-const vec4 COLOR_REF_NEAR = vec4(.8672, .1758, .1484, 1.);
-const vec4 COLOR_REF_FAR = vec4(.9922, .8750, .8203, 1.);
+const vec4 COLOR_DIST_NEAR = vec4(.0313, .3164, .6094, 1.);
+const vec4 COLOR_DIST_FAR = vec4(.9336, .9492, .9961, 1.);
+const vec4 COLOR_REF_NEAR = vec4(.6445, .0586, .0820, 1.);
+const vec4 COLOR_REF_FAR = vec4(.9922, .8945, .8477, 1.);
 
-const vec4 COLOR_UNIT = vec4(.5938, .3047, .6367, 1.);
-const vec4 COLOR_BOUNDARY = vec4(.8906, .1016, .1094, 1.);
-const vec4 COLOR_CH = vec4(.2148, .4922, .7188, 1.);
+const vec4 COLOR_UNIT = vec4(.3203, .3203, .3203, 1.);
+const vec4 COLOR_BOUNDARY = vec4(.7383, .0000, .1484, 1.);
+const vec4 COLOR_CH = vec4(.0313, .1133, .3438, 1.);
 
-const vec4 COLOR_POINT = vec4(.2148, .4922, .7188, 1.);
-const vec4 COLOR_POINT_REF = vec4(.9961, .4980, 0., 1.);
-const vec4 COLOR_PROJ = vec4(.5938, .3047, .6367, 1.);
-const vec4 COLOR_PROJ_REF = vec4(.3008, .6836, .2891, 1.);
+const vec4 COLOR_POINT = vec4(.2539, .7109, .7656, 1.);
+const vec4 COLOR_POINT_REF = vec4(.9883, .5508, .2344, 1.);
+const vec4 COLOR_PROJ = vec4(.3203, .3203, .3203, 1.);
+const vec4 COLOR_PROJ_REF = vec4(.6797, .0039, .4922, 1.);
 
 float card(vec2 v) {
     return sqrt(dot(v, v));
