@@ -4,7 +4,6 @@ import {
   loadAsTex,
   loadTexFile,
   loadText,
-  precision,
   setPositionAttribute,
   writeMessage,
 } from './misc.js';
@@ -46,10 +45,14 @@ export default class PixelCanvas {
     this.values = {};
     this.valueDefs = [];
     this.prerender = [];
+    this.postrender = [];
     this.recordingState = NO_RECORDING;
     this.isSetup = false;
     this.isDrawing = false;
     this.hidden = false;
+    this.requestClear = false;
+    this.requestFullRepaint = false;
+    this.requestRepaint = false;
   }
 
   async setup() {
@@ -75,9 +78,13 @@ export default class PixelCanvas {
 
   clear() {
     if (this.isDrawing) {
-      requestAnimationFrame(() => {
-        this.clear();
-      });
+      if (!this.requestClear) {
+        requestAnimationFrame(() => {
+          this.requestClear = false;
+          this.clear();
+        });
+        this.requestClear = true;
+      }
       return;
     }
     this.gl = null;
@@ -91,9 +98,13 @@ export default class PixelCanvas {
 
   fullRepaint(cb) {
     if (this.isDrawing) {
-      requestAnimationFrame(() => {
-        this.fullRepaint(cb);
-      });
+      if (!this.requestFullRepaint) {
+        requestAnimationFrame(() => {
+          this.requestFullRepaint = false;
+          this.fullRepaint(cb);
+        });
+        this.requestFullRepaint = true;
+      }
       return;
     }
     this.gl = null;
@@ -105,9 +116,13 @@ export default class PixelCanvas {
       return;
     }
     if (this.isDrawing) {
-      requestAnimationFrame(() => {
-        this.repaint(cb);
-      });
+      if (!this.requestRepaint || cb) {
+        requestAnimationFrame(() => {
+          this.requestRepaint = false;
+          this.repaint(cb);
+        });
+        this.requestRepaint = true;
+      }
       return;
     }
 
@@ -473,6 +488,10 @@ export default class PixelCanvas {
     this.prerender.push(cb);
   }
 
+  addPostrenderHook(cb) {
+    this.postrender.push(cb);
+  }
+
   drawScene() {
     const gl = this.getGL();
     const measures = this.getMeasures();
@@ -555,18 +574,19 @@ export default class PixelCanvas {
       const vertexCount = 4;
       gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
     }
+
+    this.postrender.forEach((cb) => cb(values));
   }
 
-  addCoords(name, text) {
-    const coord = document.createElement('div');
-    coord.classList.add('refcoord');
-    this.addPrerenderHook((values) => {
-      const [x, y] = values[name];
-      coord.textContent = `${text}: ${precision(x, 5)} ${precision(y, 5)}`;
+  addStatus(cb) {
+    const status = document.createElement('div');
+    status.classList.add('refstatus');
+    this.addPostrenderHook((values) => {
+      status.textContent = cb(values);
       return values;
     });
     const bottombar = document.querySelector(this.bottombarId);
-    bottombar.appendChild(coord);
+    bottombar.appendChild(status);
   }
 
   addButton(text, key, cb) {
@@ -702,6 +722,12 @@ export default class PixelCanvas {
         e.preventDefault();
         cb();
       }
+    });
+  }
+
+  addVisibilityCheck() {
+    document.addEventListener('visibilitychange', () => {
+      this.setHidden(document.hidden);
     });
   }
 

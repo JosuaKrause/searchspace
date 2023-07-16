@@ -1,5 +1,5 @@
 import ConvexHull from './convex.js';
-import { convertMousePosition, loadImage } from './misc.js';
+import { convertMousePosition, loadImage, precision } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
 export default class App extends PixelCanvas {
@@ -22,7 +22,7 @@ export default class App extends PixelCanvas {
     const watermark = await loadImage('img/watermark.png');
 
     this.addValue('wm', 'uWM', 'image', watermark);
-    this.addValue('fixedRef', 'uFixedRef', 'bool', false);
+    this.addValue('areaMode', 'uAreaMode', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
     this.addValue('unitCircle', 'uUnitCircle', 'bool', true);
     this.addValue('convexHull', 'uConvexHull', 'bool', true);
@@ -43,28 +43,36 @@ export default class App extends PixelCanvas {
       return values;
     });
 
+    const onShift = (e) => {
+      if (e.key == 'Shift') {
+        this.updateValue({
+          areaMode: e.shiftKey,
+        });
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onShift);
+    window.addEventListener('keyup', onShift);
+
     const canvas = this.getCanvas();
     canvas.addEventListener('mousemove', (e) => {
-      const values = this.getValues();
-      if (!values.fixedRef) {
-        this.updateValue({
-          refPosition: convertMousePosition(
-            this.getCanvas(),
-            this.getMeasures(),
-            e,
-          ),
-        });
-      }
-    });
-    canvas.addEventListener('click', (e) => {
-      const values = this.getValues();
       this.updateValue({
         refPosition: convertMousePosition(
           this.getCanvas(),
           this.getMeasures(),
           e,
         ),
-        fixedRef: !values.fixedRef,
+      });
+    });
+    canvas.addEventListener('click', (e) => {
+      const values = this.getValues();
+      // TODO click
+      this.updateValue({
+        refPosition: convertMousePosition(
+          this.getCanvas(),
+          this.getMeasures(),
+          e,
+        ),
       });
     });
 
@@ -92,16 +100,29 @@ export default class App extends PixelCanvas {
 
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
+
+    const fpsSum = [];
+    let refTime = 0;
     this.addPrerenderHook((values) => {
-      if (this.isRecording()) {
-        values.fixedRef = true;
-      }
+      refTime = performance.now();
       return values;
     });
-    this.addButton('Hide', 'H', () => {
-      this.setHidden(!this.isHidden());
+    this.addStatus((values) => {
+      const fps = 1 / (performance.now() - refTime);
+      if (Number.isFinite(fps)) {
+        fpsSum.push(fps);
+        if (fpsSum.length > 100) {
+          fpsSum.shift();
+        }
+      }
+      const avgFps = fpsSum.reduce((p, v) => p + v, 0) / fpsSum.length;
+      const avgFpsText = `FPS: ${avgFps.toPrecision(3)}`;
+      const [x, y] = values.refPosition;
+      const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
+      return `${avgFpsText} ${posText}`;
     });
-    this.addCoords('refPosition', 'Pos');
+
+    this.addVisibilityCheck();
 
     await super.setup();
   }

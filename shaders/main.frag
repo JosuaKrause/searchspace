@@ -4,7 +4,7 @@ uniform highp vec2 uUnit;
 uniform highp vec2 uScreenSize;
 uniform highp vec2 uRefPosition;
 uniform highp float uDistFactor;
-uniform int uFixedRef;
+uniform int uAreaMode;
 uniform int uShowGrid;
 uniform int uUnitCircle;
 uniform int uConvexHull;
@@ -147,7 +147,7 @@ vec2 getOutlinePoint(int ix) {
 }
 
 vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
-    float distNorm = 1.;
+    float distNorm = 0.;
     int closestIx = -1;
     if(includeRef) {
         distNorm = getDistance(distanceFn, pos, uRefPosition);
@@ -160,7 +160,7 @@ vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
         }
         vec2 ref = getPointPos(ix);
         float curDist = getDistance(distanceFn, pos, ref);
-        if(curDist + eps < distNorm) {
+        if(closestIx == -1 || curDist + eps < distNorm) {
             distNorm = curDist;
             closestIx = ix;
         }
@@ -200,7 +200,7 @@ vec2 move(vec2 pos, int direction, int step) {
 
 float countBoundary(int distanceFn, vec2 pos, int border, bool includeRef) {
     int center = getClosestIx(distanceFn, pos, includeRef);
-    float count = 0.0;
+    float count = 0.;
     int total = 0;
     for(int bord = 1; bord <= MAX_DIST; bord += 1) {
         if(bord > border) {
@@ -246,7 +246,7 @@ float countHidden(vec2 pos, int border) {
 }
 
 float countCircle(vec2 pos, float radius, int border) {
-    float count = 0.0;
+    float count = 0.;
     float rad2 = radius * radius;
     int total = 0;
     for(int bord = 1; bord <= MAX_DIST; bord += 1) {
@@ -263,7 +263,7 @@ float countCircle(vec2 pos, float radius, int border) {
 }
 
 vec4 alphaMix(vec4 front, vec4 back) {
-    return vec4(mix(front.rgb, back.rgb, front.a), 1.0);
+    return vec4(mix(front.rgb, back.rgb, front.a), 1.);
 }
 
 vec4 fillCircle(vec4 inColor, vec2 pos, float radius, vec4 color, int border) {
@@ -276,7 +276,7 @@ vec4 drawCircle(vec4 inColor, vec2 pos, float radius, vec4 color, int border) {
 
 vec4 waterColor(vec2 pos) {
     float iRatio = uWMSize.y / uWMSize.x;
-    float iScale = uWMSize.x * 0.5;
+    float iScale = uWMSize.x * .5;
     vec2 wmFull = vec2(iRatio, -1.) * sPos / iScale;
     vec2 sConv = uScreenSize / uWMSize / 4.;
     return texture2D(uWMTex, wmFull - vec2(-.5) - pos * sConv);
@@ -288,41 +288,46 @@ vec4 alpha(vec4 base, float alpha) {
 
 void main(void) {
     int distanceFn = uDistanceFn;
+    bool isAreaMode = uAreaMode != 0;
+    bool showUnitCircle = uUnitCircle != 0;
+    bool showConvexHull = uConvexHull != 0;
+    bool showGrid = uShowGrid != 0;
 
     // Main Background
-    vec2 closest = getClosest(distanceFn, vPos, true);
+    int closestRefIx = getIx(getClosest(distanceFn, uRefPosition, !isAreaMode));
+    vec2 closest = getClosest(distanceFn, vPos, !isAreaMode);
     int closestIx = getIx(closest);
     float distNorm = clamp(getDist(closest), 0., 1.);
-    if(closestIx < 0) {
-        gl_FragColor = mix(COLOR_REF_NEAR, COLOR_REF_FAR, distNorm);
-    } else {
+    if(isAreaMode ? (closestIx != closestRefIx) : (closestIx >= 0)) {
         gl_FragColor = mix(COLOR_DIST_NEAR, COLOR_DIST_FAR, distNorm);
+    } else {
+        gl_FragColor = mix(COLOR_REF_NEAR, COLOR_REF_FAR, distNorm);
     }
 
     // Unit Circle
-    if(uUnitCircle != 0) {
+    if(showUnitCircle) {
         gl_FragColor = drawCircle(gl_FragColor, vec2(0.), 1., COLOR_UNIT, 5);
     }
 
     // Closest Boundaries
-    float crossings = countBoundary(distanceFn, vPos, 5, true);
+    float crossings = countBoundary(distanceFn, vPos, 5, !isAreaMode);
     gl_FragColor = alphaMix(alpha(COLOR_BOUNDARY, crossings), gl_FragColor);
 
     // Hidden Boundaries
-    if(uConvexHull != 0) {
+    if(showConvexHull) {
         float hiddenCrossings = countHidden(vPos, 5);
         gl_FragColor = alphaMix(alpha(COLOR_CH, 1. - hiddenCrossings), gl_FragColor);
     }
 
     // Point Dots
-    int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
+    int nearestIx = getClosestIx(DF_L2, vPos, !isAreaMode);
     vec2 nearestPos = getPointPos(nearestIx);
     vec4 nearestColor = nearestIx < 0 ? COLOR_POINT_REF : COLOR_POINT;
     gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
 
     // Projected Dots
-    if(uUnitCircle != 0) {
-        int projIx = getClosestIx(DF_COS, vPos, true);
+    if(showUnitCircle) {
+        int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
         vec2 projPos = getPointPos(projIx);
         projPos /= card(projPos);
         vec4 projColor = projIx < 0 ? COLOR_PROJ_REF : COLOR_PROJ;
@@ -343,9 +348,9 @@ void main(void) {
     gl_FragColor.rgb = clamp(wmColorC.rgb * .1 + gl_FragColor.rgb, vec3(0.), vec3(1.));
 
     // Grid
-    if(uShowGrid != 0) {
-        if((mod(vPos.x, 2.0) < 1.0) != mod(vPos.y, 2.0) < 1.0) {
-            gl_FragColor.rgb = 1.0 - gl_FragColor.rgb;
+    if(showGrid) {
+        if((mod(vPos.x, 2.) < 1.) != mod(vPos.y, 2.) < 1.) {
+            gl_FragColor.rgb = 1. - gl_FragColor.rgb;
         }
     }
 }
