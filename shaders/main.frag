@@ -46,6 +46,20 @@ varying highp vec2 sPos;
 #define DF_DOT 2
 #define DF_COS 3
 
+const vec4 COLOR_DIST_NEAR = vec4(0., 0., 0., 1.);
+const vec4 COLOR_DIST_FAR = vec4(1., 1., 1., 0.);
+const vec4 COLOR_REF_NEAR = vec4(.5, .5, 0., 1.);
+const vec4 COLOR_REF_FAR = vec4(.5, .5, 1., 1.);
+
+const vec4 COLOR_UNIT = vec4(0., 1., 0., 1.);
+const vec4 COLOR_BOUNDARY = vec4(1., 0., 0., 1.);
+const vec4 COLOR_CH = vec4(0., 0., 1., 1.);
+
+const vec4 COLOR_POINT = vec4(0., 1., 1., 1.);
+const vec4 COLOR_POINT_REF = vec4(1., 1., 0., 1.);
+const vec4 COLOR_PROJ = vec4(1., .5, .5, 1.);
+const vec4 COLOR_PROJ_REF = vec4(.5, 1., .5, 1.);
+
 float card(vec2 v) {
     return sqrt(dot(v, v));
 }
@@ -268,6 +282,10 @@ vec4 waterColor(vec2 pos) {
     return texture2D(uWMTex, wmFull - vec2(-.5) - pos * sConv);
 }
 
+vec4 alpha(vec4 base, float alpha) {
+    return base * vec4(vec3(1.), alpha);
+}
+
 void main(void) {
     int distanceFn = uDistanceFn;
 
@@ -275,27 +293,31 @@ void main(void) {
     vec2 closest = getClosest(distanceFn, vPos, true);
     int closestIx = getIx(closest);
     float distNorm = clamp(getDist(closest), 0., 1.);
-    gl_FragColor = (closestIx < 0) ? vec4(.5, .5, distNorm, 1.) : vec4(vec3(distNorm), 1.);
+    if(closestIx < 0) {
+        gl_FragColor = mix(COLOR_REF_NEAR, COLOR_REF_FAR, distNorm);
+    } else {
+        gl_FragColor = mix(COLOR_DIST_NEAR, COLOR_DIST_FAR, distNorm);
+    }
 
     // Unit Circle
     if(uUnitCircle != 0) {
-        gl_FragColor = drawCircle(gl_FragColor, vec2(0.), 1., vec4(0., 1., 0., 1.), 5);
+        gl_FragColor = drawCircle(gl_FragColor, vec2(0.), 1., COLOR_UNIT, 5);
     }
 
     // Closest Boundaries
     float crossings = countBoundary(distanceFn, vPos, 5, true);
-    gl_FragColor = alphaMix(vec4(1., 0., 0., 1. * crossings), gl_FragColor);
+    gl_FragColor = alphaMix(alpha(COLOR_BOUNDARY, crossings), gl_FragColor);
 
     // Hidden Boundaries
     if(uConvexHull != 0) {
         float hiddenCrossings = countHidden(vPos, 5);
-        gl_FragColor = alphaMix(vec4(0., 0., 1., 1. * (1. - hiddenCrossings)), gl_FragColor);
+        gl_FragColor = alphaMix(alpha(COLOR_CH, 1. - hiddenCrossings), gl_FragColor);
     }
 
     // Point Dots
     int nearestIx = getClosestIx(DF_L2, vPos, uFixedRef != 0);
     vec2 nearestPos = getPointPos(nearestIx);
-    vec4 nearestColor = nearestIx < 0 ? vec4(1., 1., 0., 1.) : vec4(0., 1., 1., 1.);
+    vec4 nearestColor = nearestIx < 0 ? COLOR_POINT_REF : COLOR_POINT;
     gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
 
     // Projected Dots
@@ -303,7 +325,7 @@ void main(void) {
         int projIx = getClosestIx(DF_COS, vPos, true);
         vec2 projPos = getPointPos(projIx);
         projPos /= card(projPos);
-        vec4 projColor = projIx < 0 ? vec4(.5, 1., .5, 1.) : vec4(1., .5, .5, 1.);
+        vec4 projColor = projIx < 0 ? COLOR_PROJ_REF : COLOR_PROJ;
         gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
     }
 
