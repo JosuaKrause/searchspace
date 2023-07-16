@@ -28,7 +28,7 @@ export default class App extends PixelCanvas {
     this.addValue('unitCircle', 'uUnitCircle', 'bool', true);
     this.addValue('convexHull', 'uConvexHull', 'bool', true);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
-    this.addValue('distanceFn', 'uDistanceFn', 'enum', 2);
+    this.addValue('distanceFn', 'uDistanceFn', 'enum', 1); //2);
     this.addValue('distFactor', 'uDistFactor', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', [
       // [4.0, 2.0],
