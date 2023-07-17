@@ -126,7 +126,7 @@ export default class App extends PixelCanvas {
         values.points,
         values.refPosition,
       );
-      const distText = `Dist:${precision(dist, 5)}`;
+      const distText = `Dist:${precision(dist * values.correction, 5)}`;
       return `${distText} ${posText}`;
     });
 
@@ -153,7 +153,8 @@ export default class App extends PixelCanvas {
     }
 
     function dotDist(a, b) {
-      return Math.exp(-dot(a, b) * 1e-2);
+      const v = -dot(a, b);
+      return (1 + v / (1 + Math.abs(v))) * 0.4;
     }
 
     function cos2d(a, b) {
@@ -161,7 +162,7 @@ export default class App extends PixelCanvas {
     }
 
     function cosDist(a, b) {
-      return (1 - cos2d(a, b)) * 0.5;
+      return ((1 - cos2d(a, b)) * 0.5) / 0.4;
     }
 
     function l2Dist(a, b) {

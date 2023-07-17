@@ -101,7 +101,8 @@ vec2 getOutlinePoint(int ix) {
 }
 
 float dotDist(vec2 a, vec2 b) {
-    return exp(-dot(a, b) * 1e-2);
+    float v = -dot(a, b);
+    return (1. + v / (1. + abs(v))) * .4;
 }
 
 float cos2d(vec2 a, vec2 b) {
@@ -109,7 +110,7 @@ float cos2d(vec2 a, vec2 b) {
 }
 
 float cosDist(vec2 a, vec2 b) {
-    return (1. - cos2d(a, b)) * .5;
+    return (1. - cos2d(a, b)) * .5 / .4;
 }
 
 float l2Dist(vec2 a, vec2 b) {
