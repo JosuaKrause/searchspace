@@ -60,36 +60,6 @@ const vec4 COLOR_POINT_REF = vec4(.9883, .5508, .2344, 1.);
 const vec4 COLOR_PROJ = vec4(.3203, .3203, .3203, 1.);
 const vec4 COLOR_PROJ_REF = vec4(.6797, .0039, .4922, 1.);
 
-float card(vec2 v) {
-    return sqrt(dot(v, v));
-}
-
-float dotDist(vec2 a, vec2 b) {
-    return exp(-dot(a, b));
-}
-
-float cos2d(vec2 a, vec2 b) {
-    return dot(a, b) / card(a) / card(b);
-}
-
-float cosDist(vec2 a, vec2 b) {
-    return (1. - cos2d(a, b)) * .5;
-}
-
-float sumAll(vec2 v) {
-    return dot(v, vec2(1.));
-}
-
-float l2Dist(vec2 a, vec2 b) {
-    vec2 res = a - b;
-    return sqrt(dot(res, res));
-}
-
-float l1Dist(vec2 a, vec2 b) {
-    vec2 res = abs(a - b);
-    return sumAll(res);
-}
-
 int crossingsForLine(vec2 p, vec2 from, vec2 to) {
     if(p.y < from.y && p.y < to.y) {
         return 0;
@@ -110,22 +80,6 @@ int crossingsForLine(vec2 p, vec2 from, vec2 to) {
     return (from.y < to.y) ? 1 : -1;
 }
 
-float getDistance(int distanceFn, vec2 a, vec2 b) {
-    if(distanceFn == DF_L1) {
-        return l1Dist(a, b);
-    }
-    if(distanceFn == DF_L2) {
-        return l2Dist(a, b);
-    }
-    if(distanceFn == DF_DOT) {
-        return dotDist(a, b);
-    }
-    if(distanceFn == DF_COS) {
-        return cosDist(a, b);
-    }
-    return 0.;
-}
-
 vec2 getPointPos(int ix) {
     if(ix < 0) {
         return uRefPosition;
@@ -144,6 +98,43 @@ vec2 getOutlinePoint(int ix) {
     float xpos = (mod(float(ix), size) + .5) / size;
     float ypos = (floor(float(ix) / size) + .5) / size;
     return texture2D(uOutlineTex, vec2(xpos, ypos)).xy;
+}
+
+float dotDist(vec2 a, vec2 b) {
+    return exp(-dot(a, b));
+}
+
+float cos2d(vec2 a, vec2 b) {
+    return dot(a, b) / length(a) / length(b);
+}
+
+float cosDist(vec2 a, vec2 b) {
+    return (1. - cos2d(a, b)) * .5;
+}
+
+float l2Dist(vec2 a, vec2 b) {
+    return distance(a, b);
+}
+
+float l1Dist(vec2 a, vec2 b) {
+    vec2 res = abs(a - b);
+    return res.x + res.y;
+}
+
+float getDistance(int distanceFn, vec2 a, vec2 b) {
+    if(distanceFn == DF_L1) {
+        return l1Dist(a, b);
+    }
+    if(distanceFn == DF_L2) {
+        return l2Dist(a, b);
+    }
+    if(distanceFn == DF_DOT) {
+        return dotDist(a, b);
+    }
+    if(distanceFn == DF_COS) {
+        return cosDist(a, b);
+    }
+    return 0.;
 }
 
 vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
@@ -297,11 +288,12 @@ void main(void) {
     int closestRefIx = getIx(getClosest(distanceFn, uRefPosition, !isAreaMode));
     vec2 closest = getClosest(distanceFn, vPos, !isAreaMode);
     int closestIx = getIx(closest);
+    bool isRefClose = isAreaMode ? (closestIx == closestRefIx) : (closestIx < 0);
     float distNorm = clamp(getDist(closest), 0., 1.);
-    if(isAreaMode ? (closestIx != closestRefIx) : (closestIx >= 0)) {
-        gl_FragColor = mix(COLOR_DIST_NEAR, COLOR_DIST_FAR, distNorm);
-    } else {
+    if(isRefClose) {
         gl_FragColor = mix(COLOR_REF_NEAR, COLOR_REF_FAR, distNorm);
+    } else {
+        gl_FragColor = mix(COLOR_DIST_NEAR, COLOR_DIST_FAR, distNorm);
     }
 
     // Unit Circle
@@ -322,15 +314,17 @@ void main(void) {
     // Point Dots
     int nearestIx = getClosestIx(DF_L2, vPos, !isAreaMode);
     vec2 nearestPos = getPointPos(nearestIx);
-    vec4 nearestColor = nearestIx < 0 ? COLOR_POINT_REF : COLOR_POINT;
+    bool isRefNear = isAreaMode ? (nearestIx == closestRefIx) : (nearestIx < 0);
+    vec4 nearestColor = isRefNear ? COLOR_POINT_REF : COLOR_POINT;
     gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
 
     // Projected Dots
     if(showUnitCircle) {
         int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
         vec2 projPos = getPointPos(projIx);
-        projPos /= card(projPos);
-        vec4 projColor = projIx < 0 ? COLOR_PROJ_REF : COLOR_PROJ;
+        projPos = normalize(projPos);
+        bool isRefProj = isAreaMode ? (projIx == closestRefIx) : (projIx < 0);
+        vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
         gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
     }
 

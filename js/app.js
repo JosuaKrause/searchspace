@@ -101,21 +101,19 @@ export default class App extends PixelCanvas {
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
 
-    const fpsSum = [];
+    const tpfSum = [];
     let refTime = 0;
     this.addPrerenderHook((values) => {
       refTime = performance.now();
       return values;
     });
     this.addStatus((values) => {
-      const fps = 1 / (performance.now() - refTime);
-      if (Number.isFinite(fps)) {
-        fpsSum.push(fps);
-        if (fpsSum.length > 100) {
-          fpsSum.shift();
-        }
+      const tpf = performance.now() - refTime;
+      tpfSum.push(tpf);
+      if (tpfSum.length > 100) {
+        tpfSum.shift();
       }
-      const avgFps = fpsSum.reduce((p, v) => p + v, 0) / fpsSum.length;
+      const avgFps = tpfSum.length / tpfSum.reduce((s, v) => s + v, 0);
       const avgFpsText = `FPS: ${avgFps.toPrecision(3)}`;
       const [x, y] = values.refPosition;
       const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
@@ -125,5 +123,67 @@ export default class App extends PixelCanvas {
     this.addVisibilityCheck();
 
     await super.setup();
+  }
+
+  getClosest(pos, points, distanceFn) {
+    //   float card(vec2 v) {
+    //     return sqrt(dot(v, v));
+    // }
+    // float dotDist(vec2 a, vec2 b) {
+    //     return exp(-dot(a, b));
+    // }
+    // float cos2d(vec2 a, vec2 b) {
+    //     return dot(a, b) / card(a) / card(b);
+    // }
+    // float cosDist(vec2 a, vec2 b) {
+    //     return (1. - cos2d(a, b)) * .5;
+    // }
+    // float sumAll(vec2 v) {
+    //     return dot(v, vec2(1.));
+    // }
+    // float l2Dist(vec2 a, vec2 b) {
+    //     vec2 res = a - b;
+    //     return sqrt(dot(res, res));
+    // }
+    // float l1Dist(vec2 a, vec2 b) {
+    //     vec2 res = abs(a - b);
+    //     return sumAll(res);
+    // }
+    // float getDistance(int distanceFn, vec2 a, vec2 b) {
+    //     if(distanceFn == DF_L1) {
+    //         return l1Dist(a, b);
+    //     }
+    //     if(distanceFn == DF_L2) {
+    //         return l2Dist(a, b);
+    //     }
+    //     if(distanceFn == DF_DOT) {
+    //         return dotDist(a, b);
+    //     }
+    //     if(distanceFn == DF_COS) {
+    //         return cosDist(a, b);
+    //     }
+    //     return 0.;
+    // }
+    // vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
+    //     float distNorm = 0.;
+    //     int closestIx = -1;
+    //     if(includeRef) {
+    //         distNorm = getDistance(distanceFn, pos, uRefPosition);
+    //         closestIx = -2;
+    //     }
+    //     float eps = 1e-5;  // making sure imprecisions don't fuzz results
+    //     for(int ix = 0; ix < MAX_LOOP; ix += 1) {
+    //         if(ix >= uPointsCount) {
+    //             break;
+    //         }
+    //         vec2 ref = getPointPos(ix);
+    //         float curDist = getDistance(distanceFn, pos, ref);
+    //         if(closestIx == -1 || curDist + eps < distNorm) {
+    //             distNorm = curDist;
+    //             closestIx = ix;
+    //         }
+    //     }
+    //     return vec2(uDistFactor * distNorm, float(closestIx) + .5);
+    // }
   }
 } // App

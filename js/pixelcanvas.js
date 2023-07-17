@@ -126,6 +126,11 @@ export default class PixelCanvas {
       return;
     }
 
+    const draw = () => {
+      this.drawScene();
+      cb && cb();
+    };
+
     const run = async () => {
       if (this.canvas === null) {
         const canvasDiv = document.querySelector(this.canvasId);
@@ -156,8 +161,7 @@ export default class PixelCanvas {
       if (needsSceneSetup) {
         await this.setupScene();
       }
-      this.drawScene();
-      cb && cb();
+      draw();
     };
 
     this.isDrawing = true;
@@ -169,7 +173,18 @@ export default class PixelCanvas {
       console.error(err);
       this.writeError(err);
     };
-    run().then(finish).catch(finishErr);
+    if (this.canvas !== null && this.gl !== null && this.isSetup) {
+      // fast path
+      try {
+        draw();
+        finish();
+      } catch (err) {
+        finishErr(err);
+      }
+    } else {
+      // slow path
+      run().then(finish).catch(finishErr);
+    }
   }
 
   getValues() {
@@ -495,7 +510,7 @@ export default class PixelCanvas {
   drawScene() {
     const gl = this.getGL();
     const measures = this.getMeasures();
-    const values = this.prerender.reduce((vals, cb) => ({ ...cb(vals) }), {
+    const values = this.prerender.reduce((vals, cb) => cb(vals), {
       ...this.getValues(),
     });
     const programInfo = this.programInfo;
