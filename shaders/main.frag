@@ -3,7 +3,7 @@ precision highp float;
 uniform highp vec2 uUnit;
 uniform highp vec2 uScreenSize;
 uniform highp vec2 uRefPosition;
-uniform highp float uDistFactor;
+uniform highp float uCorrection;
 uniform int uAreaMode;
 uniform int uShowGrid;
 uniform int uUnitCircle;
@@ -101,8 +101,7 @@ vec2 getOutlinePoint(int ix) {
 }
 
 float dotDist(vec2 a, vec2 b) {
-    float v = dot(a, b);
-    return v < 0. ? 1. - v : exp(-v * 1e-2);
+    return exp(-dot(a, b) * 1e-2);
 }
 
 float cos2d(vec2 a, vec2 b) {
@@ -157,7 +156,7 @@ vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
             closestIx = ix;
         }
     }
-    return vec2(uDistFactor * closestDist, float(closestIx) + .5);
+    return vec2(closestDist * uCorrection, float(closestIx) + .5);
 }
 
 int getIx(vec2 distAndIx) {

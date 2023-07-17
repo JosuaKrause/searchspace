@@ -34,7 +34,7 @@ export default class App extends PixelCanvas {
     this.addValue('convexHull', 'uConvexHull', 'bool', true);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', DFS.indexOf(DF_L2));
-    this.addValue('distFactor', 'uDistFactor', 'range', 2.5);
+    this.addValue('correction', 'uCorrection', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', [
       [0.4, 0.2],
       [-0.5, 0.8],
@@ -104,7 +104,7 @@ export default class App extends PixelCanvas {
     this.addControl('showGrid', 'Show Grid', {});
     this.addControl('unitCircle', 'Unit', {});
     this.addControl('convexHull', 'CH', {});
-    this.addControl('distFactor', 'Distance Scale', {
+    this.addControl('correction', 'Correction', {
       min: 0.01,
       max: 10.0,
       step: 0.01,
@@ -118,20 +118,7 @@ export default class App extends PixelCanvas {
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
 
-    // const tpfSum = [];
-    // let refTime = 0;
-    // this.addPrerenderHook((values) => {
-    //   refTime = performance.now();
-    //   return values;
-    // });
     this.addStatus((values) => {
-      // const tpf = performance.now() - refTime;
-      // tpfSum.push(tpf);
-      // if (tpfSum.length > 100) {
-      //   tpfSum.shift();
-      // }
-      // const avgFps = tpfSum.length / tpfSum.reduce((s, v) => s + v, 0);
-      // const avgFpsText = `FPS: ${avgFps.toPrecision(3)}`;
       const [x, y] = values.refPosition;
       const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
       const [dist, _] = this.getClosest(
@@ -166,8 +153,7 @@ export default class App extends PixelCanvas {
     }
 
     function dotDist(a, b) {
-      const v = dot(a, b);
-      return v < 0 ? 1 - v : Math.exp(-v * 1e-2);
+      return Math.exp(-dot(a, b) * 1e-2);
     }
 
     function cos2d(a, b) {
