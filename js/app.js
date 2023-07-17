@@ -2,6 +2,12 @@ import ConvexHull from './convex.js';
 import { convertMousePosition, loadImage, precision } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
+const DF_L1 = 'L1';
+const DF_L2 = 'L2';
+const DF_COS = 'Cos';
+const DF_DOT = 'Dot';
+const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT];
+
 export default class App extends PixelCanvas {
   constructor(canvasId, topbarId, bottombarId, errorId) {
     super(
@@ -27,7 +33,7 @@ export default class App extends PixelCanvas {
     this.addValue('unitCircle', 'uUnitCircle', 'bool', true);
     this.addValue('convexHull', 'uConvexHull', 'bool', true);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
-    this.addValue('distanceFn', 'uDistanceFn', 'enum', 1); //2);
+    this.addValue('distanceFn', 'uDistanceFn', 'enum', DFS.indexOf(DF_L2));
     this.addValue('distFactor', 'uDistFactor', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', [
       [0.4, 0.2],
@@ -56,33 +62,44 @@ export default class App extends PixelCanvas {
 
     const canvas = this.getCanvas();
     canvas.addEventListener('mousemove', (e) => {
+      const refPosition = convertMousePosition(
+        this.getCanvas(),
+        this.getMeasures(),
+        e,
+      );
       this.updateValue({
-        refPosition: convertMousePosition(
-          this.getCanvas(),
-          this.getMeasures(),
-          e,
-        ),
+        refPosition,
       });
     });
     canvas.addEventListener('click', (e) => {
+      const refPosition = convertMousePosition(
+        this.getCanvas(),
+        this.getMeasures(),
+        e,
+      );
       const values = this.getValues();
-      // TODO click
+      const points = [...values.points];
+      if (values.areaMode) {
+        const [_, ix] = this.getClosest(
+          DFS[values.distanceFn],
+          values.points,
+          refPosition,
+        );
+        points.splice(ix, 1);
+      } else {
+        points.push(refPosition);
+      }
       this.updateValue({
-        refPosition: convertMousePosition(
-          this.getCanvas(),
-          this.getMeasures(),
-          e,
-        ),
+        points,
+        refPosition,
       });
     });
 
     this.addControl('distanceFn', 'Distance Function', {
-      options: [
-        { value: '0', text: 'L1' },
-        { value: '1', text: 'L2' },
-        { value: '2', text: 'Dot' },
-        { value: '3', text: 'Cos' },
-      ],
+      options: DFS.map((dfName, dfIx) => ({
+        text: dfName,
+        value: dfIx,
+      })),
     });
     this.addControl('showGrid', 'Show Grid', {});
     this.addControl('unitCircle', 'Unit', {});
@@ -101,23 +118,29 @@ export default class App extends PixelCanvas {
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
 
-    const tpfSum = [];
-    let refTime = 0;
-    this.addPrerenderHook((values) => {
-      refTime = performance.now();
-      return values;
-    });
+    // const tpfSum = [];
+    // let refTime = 0;
+    // this.addPrerenderHook((values) => {
+    //   refTime = performance.now();
+    //   return values;
+    // });
     this.addStatus((values) => {
-      const tpf = performance.now() - refTime;
-      tpfSum.push(tpf);
-      if (tpfSum.length > 100) {
-        tpfSum.shift();
-      }
-      const avgFps = tpfSum.length / tpfSum.reduce((s, v) => s + v, 0);
-      const avgFpsText = `FPS: ${avgFps.toPrecision(3)}`;
+      // const tpf = performance.now() - refTime;
+      // tpfSum.push(tpf);
+      // if (tpfSum.length > 100) {
+      //   tpfSum.shift();
+      // }
+      // const avgFps = tpfSum.length / tpfSum.reduce((s, v) => s + v, 0);
+      // const avgFpsText = `FPS: ${avgFps.toPrecision(3)}`;
       const [x, y] = values.refPosition;
       const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
-      return `${avgFpsText} ${posText}`;
+      const [dist, _] = this.getClosest(
+        DFS[values.distanceFn],
+        values.points,
+        values.refPosition,
+      );
+      const distText = `Dist:${precision(dist, 5)}`;
+      return `${distText} ${posText}`;
     });
 
     this.addVisibilityCheck();
@@ -125,65 +148,71 @@ export default class App extends PixelCanvas {
     await super.setup();
   }
 
-  getClosest(pos, points, distanceFn) {
-    //   float card(vec2 v) {
-    //     return sqrt(dot(v, v));
-    // }
-    // float dotDist(vec2 a, vec2 b) {
-    //     return exp(-dot(a, b));
-    // }
-    // float cos2d(vec2 a, vec2 b) {
-    //     return dot(a, b) / card(a) / card(b);
-    // }
-    // float cosDist(vec2 a, vec2 b) {
-    //     return (1. - cos2d(a, b)) * .5;
-    // }
-    // float sumAll(vec2 v) {
-    //     return dot(v, vec2(1.));
-    // }
-    // float l2Dist(vec2 a, vec2 b) {
-    //     vec2 res = a - b;
-    //     return sqrt(dot(res, res));
-    // }
-    // float l1Dist(vec2 a, vec2 b) {
-    //     vec2 res = abs(a - b);
-    //     return sumAll(res);
-    // }
-    // float getDistance(int distanceFn, vec2 a, vec2 b) {
-    //     if(distanceFn == DF_L1) {
-    //         return l1Dist(a, b);
-    //     }
-    //     if(distanceFn == DF_L2) {
-    //         return l2Dist(a, b);
-    //     }
-    //     if(distanceFn == DF_DOT) {
-    //         return dotDist(a, b);
-    //     }
-    //     if(distanceFn == DF_COS) {
-    //         return cosDist(a, b);
-    //     }
-    //     return 0.;
-    // }
-    // vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
-    //     float distNorm = 0.;
-    //     int closestIx = -1;
-    //     if(includeRef) {
-    //         distNorm = getDistance(distanceFn, pos, uRefPosition);
-    //         closestIx = -2;
-    //     }
-    //     float eps = 1e-5;  // making sure imprecisions don't fuzz results
-    //     for(int ix = 0; ix < MAX_LOOP; ix += 1) {
-    //         if(ix >= uPointsCount) {
-    //             break;
-    //         }
-    //         vec2 ref = getPointPos(ix);
-    //         float curDist = getDistance(distanceFn, pos, ref);
-    //         if(closestIx == -1 || curDist + eps < distNorm) {
-    //             distNorm = curDist;
-    //             closestIx = ix;
-    //         }
-    //     }
-    //     return vec2(uDistFactor * distNorm, float(closestIx) + .5);
-    // }
+  getDistance(distanceFn, vecA, vecB) {
+    function absSum(a) {
+      return Math.abs(a[0]) + Math.abs(a[1]);
+    }
+
+    function sub(a, b) {
+      return [a[0] - b[0], a[1] - b[1]];
+    }
+
+    function dot(a, b) {
+      return a[0] * b[0] + a[1] * b[1];
+    }
+
+    function card(v) {
+      return Math.sqrt(dot(v, v));
+    }
+
+    function dotDist(a, b) {
+      const v = dot(a, b);
+      return v < 0 ? 1 - v : Math.exp(-v * 1e-2);
+    }
+
+    function cos2d(a, b) {
+      return dot(a, b) / card(a) / card(b);
+    }
+
+    function cosDist(a, b) {
+      return (1 - cos2d(a, b)) * 0.5;
+    }
+
+    function l2Dist(a, b) {
+      return card(sub(a, b));
+    }
+
+    function l1Dist(a, b) {
+      return absSum(sub(a, b));
+    }
+
+    if (distanceFn === DF_L1) {
+      return l1Dist(vecA, vecB);
+    }
+    if (distanceFn === DF_L2) {
+      return l2Dist(vecA, vecB);
+    }
+    if (distanceFn === DF_COS) {
+      return cosDist(vecA, vecB);
+    }
+    if (distanceFn === DF_DOT) {
+      return dotDist(vecA, vecB);
+    }
+    throw new Error(`unknown distance function: ${distanceFn}`);
+  }
+
+  getClosest(distanceFn, points, pos) {
+    const eps = 1e-5; // making sure imprecisions don't fuzz results
+    return points.reduce(
+      ([closestDist, closestIx], ref, ix) => {
+        const curDist = this.getDistance(distanceFn, pos, ref);
+        if (closestIx < 0 || curDist - closestDist < eps) {
+          closestDist = curDist;
+          closestIx = ix;
+        }
+        return [closestDist, closestIx];
+      },
+      [0, -1],
+    );
   }
 } // App

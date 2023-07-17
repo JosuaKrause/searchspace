@@ -36,8 +36,8 @@ class Point {
 
 export default class ConvexHull {
   createLines(points) {
-    if (!points.length) {
-      return [];
+    if (points.length <= 2) {
+      return points.map((p) => new Point(p));
     }
     const ps = new Map();
     let ref = null;

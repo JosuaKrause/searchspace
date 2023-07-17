@@ -43,8 +43,8 @@ varying highp vec2 sPos;
 
 #define DF_L1 0
 #define DF_L2 1
-#define DF_DOT 2
-#define DF_COS 3
+#define DF_COS 2
+#define DF_DOT 3
 
 const vec4 COLOR_DIST_NEAR = vec4(.0313, .3164, .6094, 1.);
 const vec4 COLOR_DIST_FAR = vec4(.9336, .9492, .9961, 1.);
@@ -101,7 +101,8 @@ vec2 getOutlinePoint(int ix) {
 }
 
 float dotDist(vec2 a, vec2 b) {
-    return exp(-dot(a, b));
+    float v = dot(a, b);
+    return v < 0. ? 1. - v : exp(-v * 1e-2);
 }
 
 float cos2d(vec2 a, vec2 b) {
@@ -128,20 +129,20 @@ float getDistance(int distanceFn, vec2 a, vec2 b) {
     if(distanceFn == DF_L2) {
         return l2Dist(a, b);
     }
-    if(distanceFn == DF_DOT) {
-        return dotDist(a, b);
-    }
     if(distanceFn == DF_COS) {
         return cosDist(a, b);
+    }
+    if(distanceFn == DF_DOT) {
+        return dotDist(a, b);
     }
     return 0.;
 }
 
 vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
-    float distNorm = 0.;
+    float closestDist = 0.;
     int closestIx = -1;
     if(includeRef) {
-        distNorm = getDistance(distanceFn, pos, uRefPosition);
+        closestDist = getDistance(distanceFn, pos, uRefPosition);
         closestIx = -2;
     }
     float eps = 1e-5;  // making sure imprecisions don't fuzz results
@@ -151,12 +152,12 @@ vec2 getClosest(int distanceFn, vec2 pos, bool includeRef) {
         }
         vec2 ref = getPointPos(ix);
         float curDist = getDistance(distanceFn, pos, ref);
-        if(closestIx == -1 || curDist + eps < distNorm) {
-            distNorm = curDist;
+        if(closestIx == -1 || curDist - closestDist < eps) {
+            closestDist = curDist;
             closestIx = ix;
         }
     }
-    return vec2(uDistFactor * distNorm, float(closestIx) + .5);
+    return vec2(uDistFactor * closestDist, float(closestIx) + .5);
 }
 
 int getIx(vec2 distAndIx) {
@@ -288,7 +289,7 @@ void main(void) {
     int closestRefIx = getIx(getClosest(distanceFn, uRefPosition, !isAreaMode));
     vec2 closest = getClosest(distanceFn, vPos, !isAreaMode);
     int closestIx = getIx(closest);
-    bool isRefClose = isAreaMode ? (closestIx == closestRefIx) : (closestIx < 0);
+    bool isRefClose = isAreaMode ? closestIx == closestRefIx : closestIx < 0;
     float distNorm = clamp(getDist(closest), 0., 1.);
     if(isRefClose) {
         gl_FragColor = mix(COLOR_REF_NEAR, COLOR_REF_FAR, distNorm);
@@ -314,7 +315,7 @@ void main(void) {
     // Point Dots
     int nearestIx = getClosestIx(DF_L2, vPos, !isAreaMode);
     vec2 nearestPos = getPointPos(nearestIx);
-    bool isRefNear = isAreaMode ? (nearestIx == closestRefIx) : (nearestIx < 0);
+    bool isRefNear = isAreaMode ? nearestIx == closestRefIx : nearestIx < 0;
     vec4 nearestColor = isRefNear ? COLOR_POINT_REF : COLOR_POINT;
     gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
 
@@ -323,7 +324,7 @@ void main(void) {
         int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
         vec2 projPos = getPointPos(projIx);
         projPos = normalize(projPos);
-        bool isRefProj = isAreaMode ? (projIx == closestRefIx) : (projIx < 0);
+        bool isRefProj = isAreaMode ? projIx == closestRefIx : projIx < 0;
         vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
         gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
     }
