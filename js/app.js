@@ -15,8 +15,8 @@ export default class App extends PixelCanvas {
       topbarId,
       bottombarId,
       errorId,
-      '/shaders/main.vert',
-      '/shaders/main.frag',
+      './shaders/main.vert',
+      './shaders/main.frag',
       800,
       600,
       1.0,
@@ -25,7 +25,7 @@ export default class App extends PixelCanvas {
   }
 
   async setup() {
-    const watermark = await loadImage('img/watermark.png');
+    const watermark = await loadImage('./img/watermark.png');
 
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
