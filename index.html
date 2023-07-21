@@ -5,12 +5,7 @@
         <title>Searchspace</title>
         <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico"/>
         <link rel="stylesheet" href="./style/index.css" />
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
-            integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
-            crossorigin="anonymous"
-            defer></script>
-        <script src="./js/app.js" type="module"></script>
+        <script src="./lib/gl-matrix-min.js" defer></script>
     </head>
     <body>
         <div class="hmain">
@@ -22,8 +17,9 @@
         </div>
         <div id="error"></div>
     </body>
-    <script type="module">
+    <script type="module" defer>
     import App from "./js/app.js";
+
     new App('#main', '#topbar', '#bottombar', '#error').repaint();
     </script>
 </html>

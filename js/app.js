@@ -61,7 +61,7 @@ export default class App extends PixelCanvas {
     window.addEventListener('keyup', onShift);
 
     const canvas = this.getCanvas();
-    canvas.addEventListener('mousemove', (e) => {
+    const onMove = (e) => {
       const refPosition = convertMousePosition(
         this.getCanvas(),
         this.getMeasures(),
@@ -70,7 +70,9 @@ export default class App extends PixelCanvas {
       this.updateValue({
         refPosition,
       });
-    });
+    };
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('touchmove', onMove);
     canvas.addEventListener('click', (e) => {
       const refPosition = convertMousePosition(
         this.getCanvas(),
@@ -101,7 +103,6 @@ export default class App extends PixelCanvas {
         value: dfIx,
       })),
     });
-    this.addControl('showGrid', 'Show Grid', {});
     this.addControl('unitCircle', 'Unit', {});
     this.addControl('convexHull', 'CH', {});
     this.addControl('correction', 'Correction', {
@@ -114,6 +115,8 @@ export default class App extends PixelCanvas {
       max: 10.0,
       step: 1.0,
     });
+    this.addControl('areaMode', 'Show Nearest', { monitorValue: 'areaMode' });
+    this.addControl('showGrid', 'Show Grid', {});
 
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
