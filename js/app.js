@@ -24,7 +24,7 @@ export default class App extends PixelCanvas {
       './shaders/main.frag',
       800,
       600,
-      1.0,
+      1.1,
     );
     this.ch = new ConvexHull();
   }
@@ -59,6 +59,9 @@ export default class App extends PixelCanvas {
         this.updateValue({
           areaMode: e.shiftKey,
         });
+        if (e.target) {
+          e.target.blur();
+        }
         e.preventDefault();
       }
     };
@@ -110,26 +113,26 @@ export default class App extends PixelCanvas {
       });
     });
 
-    this.addControl('distanceFn', 'Distance Function', {
+    this.addControl('distanceFn', 'Metric', {
       options: DFS.map((dfName, dfIx) => ({
         text: dfName,
         value: dfIx,
       })),
     });
-    this.addControl('unitCircle', 'Unit', {});
-    this.addControl('convexHull', 'CH', {});
+    this.addControl('unitCircle', 'Unit Circle', {});
+    this.addControl('convexHull', 'Convex Hull', {});
     this.addControl('correction', 'Correction', {
       min: 0.01,
       max: 10.0,
       step: 0.01,
     });
-    this.addViewportControl('View Range', {
+    this.addViewportControl('View', {
       min: 1.0,
       max: 10.0,
-      step: 1.0,
+      step: 0.1,
     });
     this.addControl('areaMode', 'Show Nearest', { monitorValue: 'areaMode' });
-    this.addControl('showGrid', 'Show Grid', {});
+    this.addControl('showGrid', 'Grid', {});
 
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
