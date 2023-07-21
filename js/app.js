@@ -78,6 +78,7 @@ export default class App extends PixelCanvas {
       this.updateValue({
         refPosition,
       });
+      e.preventDefault();
     });
     canvas.addEventListener('mousemove', (e) => {
       const refPosition = convertMousePosition(
