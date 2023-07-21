@@ -304,9 +304,11 @@ export default class PixelCanvas {
       elem.addEventListener('change', () => {
         setValue(elem.checked);
       });
-      this.addPostrenderHook((values) => {
-        elem.checked = values[info.monitorValue];
-      });
+      if (info.monitorValue) {
+        this.addPostrenderHook((values) => {
+          elem.checked = values[info.monitorValue];
+        });
+      }
     } else if (type === 'range') {
       const maxValue = info['max'];
       const minValue = info['min'];
@@ -341,10 +343,12 @@ export default class PixelCanvas {
         }
       });
       div.appendChild(edit);
-      this.addPostrenderHook((values) => {
-        edit.value = values[info.monitorValue];
-        elem.value = values[info.monitorValue];
-      });
+      if (info.monitorValue) {
+        this.addPostrenderHook((values) => {
+          edit.value = values[info.monitorValue];
+          elem.value = values[info.monitorValue];
+        });
+      }
     } else {
       throw new Error(
         `unsupported type ${type} for ${fullName} (${shaderName})`,

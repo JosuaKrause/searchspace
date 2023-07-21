@@ -1,5 +1,10 @@
 import ConvexHull from './convex.js';
-import { convertMousePosition, loadImage, precision } from './misc.js';
+import {
+  convertMousePosition,
+  convertTouchPosition,
+  loadImage,
+  precision,
+} from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
 const DF_L1 = 'L1';
@@ -61,7 +66,17 @@ export default class App extends PixelCanvas {
     window.addEventListener('keyup', onShift);
 
     const canvas = this.getCanvas();
-    const onMove = (e) => {
+    canvas.addEventListener('touchmove', (e) => {
+      const refPosition = convertTouchPosition(
+        this.getCanvas(),
+        this.getMeasures(),
+        e,
+      );
+      this.updateValue({
+        refPosition,
+      });
+    });
+    canvas.addEventListener('mousemove', (e) => {
       const refPosition = convertMousePosition(
         this.getCanvas(),
         this.getMeasures(),
@@ -70,9 +85,7 @@ export default class App extends PixelCanvas {
       this.updateValue({
         refPosition,
       });
-    };
-    canvas.addEventListener('mousemove', onMove);
-    canvas.addEventListener('touchmove', onMove);
+    });
     canvas.addEventListener('click', (e) => {
       const refPosition = convertMousePosition(
         this.getCanvas(),

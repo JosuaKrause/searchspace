@@ -135,6 +135,24 @@ export function convertMousePosition(canvas, measures, e) {
   return [orthoX, orthoY];
 }
 
+export function convertTouchPosition(canvas, measures, e) {
+  const [x, y, w] = e.touches.reduce(
+    (p, t) => {
+      const weight = t.force;
+      return [
+        p[0] + t.clientX * weight,
+        p[1] + t.clientY * weight,
+        p[2] + weight,
+      ];
+    },
+    [0, 0, 0],
+  );
+  return convertMousePosition(canvas, measures, {
+    clientX: x / w,
+    clientY: y / w,
+  });
+}
+
 export function download(saveURL, name) {
   const link = document.createElement('a');
   link.download = name;
