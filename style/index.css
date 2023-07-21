@@ -38,7 +38,11 @@ canvas {
 }
 
 .topbar>div {
-    margin-right: 5px;
+    flex-grow: 1;
+}
+
+.topbar>div:last-child {
+    flex-grow: 0;
 }
 
 .bottombar {
@@ -49,14 +53,17 @@ canvas {
     width: 100%;
 }
 
-.bottombar>div {
+.bottombar>div, .bottombar>input {
     margin-right: 5px;
 }
 
-.refstatus {
-    margin-right: 0 !important;
+.bottombar>div:last-child {
+    margin-right: 0;
     flex-grow: 1;
     text-align: right;
+}
+
+.refstatus {
     font-family: "Courier New", Courier, monospace;
 }
 
