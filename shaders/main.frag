@@ -323,10 +323,12 @@ void main(void) {
     if(showUnitCircle) {
         int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
         vec2 projPos = getPointPos(projIx);
-        projPos = normalize(projPos);
-        bool isRefProj = isAreaMode ? projIx == closestRefIx : projIx < 0;
-        vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
-        gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
+        if(dot(projPos, projPos) > 0.) {
+            projPos = normalize(projPos);
+            bool isRefProj = isAreaMode ? projIx == closestRefIx : projIx < 0;
+            vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
+            gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
+        }
     }
 
     // Watermark
