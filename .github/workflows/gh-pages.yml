@@ -2,49 +2,58 @@ name: Deploy GH-Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: ['main']
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
 
 jobs:
-  ci_pipeline:
-    name: CI Pipeline
-    runs-on: ubuntu-latest
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     env:
       OUTPUT: www
       LIB_COPY: filelist.txt
-      PYTHON: '3.10'
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Set up Python ${{ env.PYTHON }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ env.PYTHON }}
-
-      - name: Install ghp-import
-        run: |
-          pip install ghp-import~=2.1.0
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
 
       - name: Prepare folder
         run: |
-          mkdir -p "${OUTPUT}" && \
+          mkdir -p "${{ env.OUTPUT }}" && \
           find . \
             -not -path '.*/*' \
-            -not -path "${OUTPUT}/"'*' \
+            -not -path '${{ env.OUTPUT }}/*' \
             -type f \
             -not -name '*.md' \
             -not -name '*.config.js' \
             -not -name '*.json' \
-            -not -name "${LIB_COPY}" \
+            -not -name '${{ env.LIB_COPY }}' \
             -not -name '.*' \
             -not -name 'LICENSE' \
             -not -name 'Makefile' \
-            > "${LIB_COPY}" && \
-          cat "${LIB_COPY}" && \
-          rsync -av . "${OUTPUT}" --files-from "${LIB_COPY}"
+            > '${{ env.LIB_COPY }}' && \
+          cat '${{ env.LIB_COPY }}' && \
+          rsync -av . '${{ env.OUTPUT }}' --files-from '${{ env.LIB_COPY }}'
 
-      - name: Push to GH-Pages
-        run: |
-          ghp-import -n "${OUTPUT}" && git push -qf origin gh-pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '${{ env.OUTPUT }}'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
