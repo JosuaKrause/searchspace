@@ -56,9 +56,9 @@ export default class App extends PixelCanvas {
 
     window.addEventListener('keypress', (e) => {
       const ix = +e.key;
-      if (Number.isFinite(ix) && ix >= 0 && ix < DFS.length) {
+      if (Number.isFinite(ix) && ix >= 1 && ix <= DFS.length) {
         this.updateValue({
-          distanceFn: ix,
+          distanceFn: ix - 1,
         });
         e.preventDefault();
       }
