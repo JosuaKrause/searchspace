@@ -58,7 +58,7 @@ export default class App extends PixelCanvas {
       const ix = +e.key;
       if (Number.isFinite(ix) && ix >= 0 && ix < DFS.length) {
         this.updateValue({
-          distanceFn: DFS[ix],
+          distanceFn: ix,
         });
         e.preventDefault();
       }
