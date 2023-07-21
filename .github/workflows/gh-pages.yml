@@ -35,8 +35,8 @@ jobs:
         run: |
           mkdir -p "${{ env.OUTPUT }}" && \
           find . \
-            -not -path '.*/*' \
-            -not -path '${{ env.OUTPUT }}/*' \
+            -not -path './.*/*' \
+            -not -path './${{ env.OUTPUT }}/*' \
             -type f \
             -not -name '*.md' \
             -not -name '*.config.js' \
