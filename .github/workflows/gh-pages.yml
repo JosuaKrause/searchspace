@@ -12,7 +12,7 @@ jobs:
     env:
       OUTPUT: www
       LIB_COPY: filelist.txt
-      PYTHON: 3.10
+      PYTHON: '3.10'
 
     steps:
       - name: Checkout code
