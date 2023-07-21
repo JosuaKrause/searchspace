@@ -36,9 +36,11 @@ jobs:
           mkdir -p "${{ env.OUTPUT }}" && \
           find . \
             -not -path './.*/*' \
+            -not -path './sh/*' \
             -not -path './${{ env.OUTPUT }}/*' \
             -type f \
             -not -name '*.md' \
+            -not -name '*.sh' \
             -not -name '*.config.js' \
             -not -name '*.json' \
             -not -name '${{ env.LIB_COPY }}' \
