@@ -1,0 +1,39 @@
+name: Deploy GH-Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci_pipeline:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+    env:
+      OUTPUT: www
+      LIB_COPY: filelist.txt
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Prepare folder
+        run: |
+          mkdir -p "${OUTPUT}" && \
+          find . \
+            -not -path '.*/*' \
+            -not -path "${OUTPUT}/"'*' \
+            -type f \
+            -not -name '*.md' \
+            -not -name '*.config.js' \
+            -not -name '*.json' \
+            -not -name "${LIB_COPY}" \
+            -not -name '.*' \
+            -not -name 'LICENSE' \
+            -not -name 'Makefile' \
+            > "${LIB_COPY}" && \
+          rsync -av . "${OUTPUT}" --files-from "${LIB_COPY}"
+
+      - name: Push to GH-Pages
+        run: |
+          ghp-import -n "${OUTPUT}" && git push -qf origin gh-pages
