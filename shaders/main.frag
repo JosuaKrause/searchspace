@@ -24,7 +24,7 @@ uniform vec2 uWMSize;
 varying highp vec2 vPos;
 varying highp vec2 sPos;
 
-#define MAX_LOOP 32
+#define MAX_LOOP 36
 #define MAX_DIST 5
 
 #define M_NONE 0

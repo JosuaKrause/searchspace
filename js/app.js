@@ -7,7 +7,7 @@ import {
 } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
-const MAX_POINTS = 32;
+const MAX_POINTS = 36;
 
 export const DF_L1 = 'L1';
 export const DF_L2 = 'L2';
