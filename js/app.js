@@ -7,14 +7,16 @@ import {
 } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
-const DF_L1 = 'L1';
-const DF_L2 = 'L2';
-const DF_COS = 'Cos';
-const DF_DOT = 'Dot';
+const MAX_POINTS = 32;
+
+export const DF_L1 = 'L1';
+export const DF_L2 = 'L2';
+export const DF_COS = 'Cos';
+export const DF_DOT = 'Dot';
 const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT];
 
 export default class App extends PixelCanvas {
-  constructor(canvasId, topbarId, bottombarId, errorId) {
+  constructor(canvasId, topbarId, bottombarId, errorId, settings) {
     super(
       canvasId,
       topbarId,
@@ -27,27 +29,40 @@ export default class App extends PixelCanvas {
       1.1,
     );
     this.ch = new ConvexHull();
+    this.settings = {
+      unitCircle: true,
+      allowUnitCircle: true,
+      convexHull: true,
+      allowConvexHull: true,
+      distanceFn: DF_L2,
+      metrics: DFS,
+      points: [
+        [0.4, 0.2],
+        [-0.5, 0.8],
+        [-0.8, -0.4],
+        [0.2, -0.6],
+        [0.3, 0.3],
+        [-0.4, 0.2],
+      ],
+      ...settings,
+    };
   }
 
   async setup() {
     const watermark = await loadImage('./img/watermark.png');
+    const settings = this.settings;
+    const dfs = settings.metrics;
+    const distanceFn = dfs.indexOf(settings.distanceFn);
 
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
-    this.addValue('unitCircle', 'uUnitCircle', 'bool', true);
-    this.addValue('convexHull', 'uConvexHull', 'bool', true);
+    this.addValue('unitCircle', 'uUnitCircle', 'bool', settings.unitCircle);
+    this.addValue('convexHull', 'uConvexHull', 'bool', settings.convexHull);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
-    this.addValue('distanceFn', 'uDistanceFn', 'enum', DFS.indexOf(DF_L2));
+    this.addValue('distanceFn', 'uDistanceFn', 'enum', distanceFn);
     this.addValue('correction', 'uCorrection', 'range', 2.5);
-    this.addValue('points', 'uPoints', 'array2d', [
-      [0.4, 0.2],
-      [-0.5, 0.8],
-      [-0.8, -0.4],
-      [0.2, -0.6],
-      [0.3, 0.3],
-      [-0.4, 0.2],
-    ]);
+    this.addValue('points', 'uPoints', 'array2d', settings.points);
     this.addValue('outline', 'uOutline', 'array2d', []);
     this.addPrerenderHook((values) => {
       values.outline = this.ch.createLinesArray(values.points);
@@ -56,10 +71,13 @@ export default class App extends PixelCanvas {
 
     window.addEventListener('keypress', (e) => {
       const ix = e.code.startsWith('Digit') ? +e.code[5] : null;
-      if (ix !== null && Number.isFinite(ix) && ix >= 1 && ix <= DFS.length) {
+      if (ix !== null && Number.isFinite(ix) && ix >= 1 && ix <= dfs.length) {
         this.updateValue({
           distanceFn: ix - 1,
         });
+        if (e.target) {
+          e.target.blur();
+        }
         e.preventDefault();
       }
     });
@@ -110,12 +128,12 @@ export default class App extends PixelCanvas {
       const points = [...values.points];
       if (values.areaMode) {
         const [_, ix] = this.getClosest(
-          DFS[values.distanceFn],
+          dfs[values.distanceFn],
           values.points,
           refPosition,
         );
         points.splice(ix, 1);
-      } else {
+      } else if (points.length < MAX_POINTS) {
         points.push(refPosition);
       }
       this.updateValue({
@@ -124,26 +142,31 @@ export default class App extends PixelCanvas {
       });
     });
 
-    this.addControl('distanceFn', 'Metric', {
-      options: DFS.map((dfName, dfIx) => ({
+    this.addControl('distanceFn', 'Metric:', {
+      options: dfs.map((dfName, dfIx) => ({
         text: dfName,
         value: dfIx,
       })),
     });
-    this.addControl('unitCircle', 'Unit Circle', {});
-    this.addControl('convexHull', 'Convex Hull', {});
-    this.addControl('correction', 'Correction', {
+    this.addControl('areaMode', 'Show Nearest:', { monitorValue: 'areaMode' });
+    if (settings.allowUnitCircle) {
+      this.addControl('unitCircle', 'Unit Circle:', {});
+    }
+    if (settings.allowConvexHull) {
+      this.addControl('convexHull', 'Convex Hull:', {});
+    }
+    this.addTopDivider();
+    this.addControl('correction', 'Correction:', {
       min: 0.01,
       max: 10.0,
       step: 0.01,
     });
-    this.addViewportControl('View', {
+    this.addViewportControl('View:', {
       min: 1.0,
       max: 10.0,
       step: 0.1,
     });
-    this.addControl('areaMode', 'Show Nearest', { monitorValue: 'areaMode' });
-    this.addControl('showGrid', 'Grid', {});
+    this.addControl('showGrid', 'Grid:', {});
 
     this.addCapture('Save', 'S');
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
@@ -152,7 +175,7 @@ export default class App extends PixelCanvas {
       const [x, y] = values.refPosition;
       const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
       const [dist, _] = this.getClosest(
-        DFS[values.distanceFn],
+        dfs[values.distanceFn],
         values.points,
         values.refPosition,
       );

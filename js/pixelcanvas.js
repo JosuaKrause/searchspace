@@ -280,7 +280,6 @@ export default class PixelCanvas {
     elem.setAttribute('name', fullName);
     const div = document.createElement('div');
     div.appendChild(label);
-    div.appendChild(elem);
     if (type === 'enum') {
       info.options.forEach(({ value, text }) => {
         const option = document.createElement('option');
@@ -340,6 +339,7 @@ export default class PixelCanvas {
         if (evalue !== rvalue) {
           setValue(rvalue);
           edit.value = rvalue;
+          edit.classList.remove('invalid');
         }
       });
       div.appendChild(edit);
@@ -354,6 +354,14 @@ export default class PixelCanvas {
         `unsupported type ${type} for ${fullName} (${shaderName})`,
       );
     }
+    div.appendChild(elem);
+    const topbar = document.querySelector(this.topbarId);
+    topbar.appendChild(div);
+  }
+
+  addTopDivider() {
+    const div = document.createElement('div');
+    div.classList.add('divider');
     const topbar = document.querySelector(this.topbarId);
     topbar.appendChild(div);
   }

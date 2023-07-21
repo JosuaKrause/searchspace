@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <title>Searchspace</title>
-        <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico"/>
-        <link rel="stylesheet" href="./style/index.css" />
-        <script src="./lib/gl-matrix-min.js" defer></script>
-    </head>
-    <body>
-        <div class="hmain">
-            <div class="vmain">
-                <div id="topbar" class="topbar"></div>
-                <div id="main" class="main"></div>
-                <div id="bottombar" class="bottombar"></div>
-            </div>
+  <head>
+    <meta charset="utf-8" />
+    <title>Visualization of Various Similarity Measures</title>
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="./style/index.css" />
+    <script src="./lib/gl-matrix-min.js" defer></script>
+  </head>
+  <body>
+    <div class="hmain">
+      <div class="vmain">
+        <div class="header">Visualization of Various Similarity Measures</div>
+        <div id="topbar" class="topbar"></div>
+        <div id="main" class="main"></div>
+        <div id="bottombar" class="bottombar"></div>
+        <div class="footer">
+          Add points by clicking and remove the currently closest point via
+          Shift+Click.
         </div>
-        <div id="error"></div>
-    </body>
-    <script type="module" defer>
-    import App from "./js/app.js";
+      </div>
+    </div>
+    <div id="error"></div>
+  </body>
+  <script type="module" defer>
+    import App from './js/app.js';
 
     new App('#main', '#topbar', '#bottombar', '#error').repaint();
-    </script>
+  </script>
 </html>
