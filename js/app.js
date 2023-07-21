@@ -54,8 +54,18 @@ export default class App extends PixelCanvas {
       return values;
     });
 
+    window.addEventListener('keypress', (e) => {
+      const ix = +e.key;
+      if (Number.isFinite(ix) && ix >= 0 && ix < DFS.length) {
+        this.updateValue({
+          distanceFn: DFS[ix],
+        });
+        e.preventDefault();
+      }
+    });
+
     const onShift = (e) => {
-      if (e.key == 'Shift') {
+      if (e.key === 'Shift') {
         this.updateValue({
           areaMode: e.shiftKey,
         });
