@@ -46,6 +46,7 @@ varying highp vec2 sPos;
 #define DF_L2 1
 #define DF_COS 2
 #define DF_DOT 3
+#define DF_L2_PROJ 4
 
 const vec4 COLOR_DIST_NEAR = vec4(.0313, .3164, .6094, 1.);
 const vec4 COLOR_DIST_FAR = vec4(.9336, .9492, .9961, 1.);
@@ -101,6 +102,13 @@ vec2 getOutlinePoint(int ix) {
     return texture2D(uOutlineTex, vec2(xpos, ypos)).xy;
 }
 
+vec2 norm(vec2 v) {
+    if(dot(v, v) > 0.) {
+        return normalize(v);
+    }
+    return v;
+}
+
 float dotDist(vec2 a, vec2 b) {
     float v = -dot(a, b);
     return (1. + v / (1. + abs(v))) * .4;
@@ -135,6 +143,9 @@ float getDistance(int distanceFn, vec2 a, vec2 b) {
     }
     if(distanceFn == DF_DOT) {
         return dotDist(a, b);
+    }
+    if(distanceFn == DF_L2_PROJ) {
+        return l2Dist(a, norm(b));
     }
     return 0.;
 }
@@ -330,8 +341,8 @@ void main(void) {
     if(showUnitCircle) {
         int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
         vec2 projPos = getPointPos(projIx);
-        if(dot(projPos, projPos) > 0.) {
-            projPos = normalize(projPos);
+        projPos = norm(projPos);
+        if(projPos != vec2(0.)) {
             bool isRefProj = isAreaMode ? projIx == closestRefIx : projIx < 0;
             vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
             gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);

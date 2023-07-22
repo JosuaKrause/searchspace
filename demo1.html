@@ -39,7 +39,7 @@
     <div id="error"></div>
   </body>
   <script type="module" defer>
-    import App, { DF_COS } from './js/app.js';
+    import App, { DF_COS, DF_L2_PROJ } from './js/app.js';
 
     new App('#main', '#topbar', '#bottombar', '#error', {
       unitCircle: true,
@@ -47,7 +47,7 @@
       convexHull: false,
       allowConvexHull: false,
       distanceFn: DF_COS,
-      metrics: [DF_COS],
+      metrics: [DF_COS, DF_L2_PROJ],
     }).repaint();
   </script>
 </html>

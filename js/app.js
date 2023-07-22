@@ -13,7 +13,8 @@ export const DF_L1 = 'L1';
 export const DF_L2 = 'L2';
 export const DF_COS = 'Cos';
 export const DF_DOT = 'Dot';
-const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT];
+export const DF_L2_PROJ = 'Unit L2';
+const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT, DF_L2_PROJ];
 
 export default class App extends PixelCanvas {
   constructor(canvasId, topbarId, bottombarId, errorId, settings) {
@@ -35,7 +36,7 @@ export default class App extends PixelCanvas {
       convexHull: true,
       allowConvexHull: true,
       distanceFn: DF_L2,
-      metrics: DFS,
+      metrics: [DF_L1, DF_L2, DF_COS, DF_DOT],
       points: [
         [0.4, 0.2],
         [-0.5, 0.8],
@@ -145,10 +146,11 @@ export default class App extends PixelCanvas {
 
     if (dfs.length > 1) {
       this.addControl('distanceFn', 'Metric:', {
-        options: dfs.map((dfName, dfIx) => ({
+        options: dfs.map((dfName) => ({
           text: dfName,
-          value: DFS.indexOf(dfs[dfIx]),
+          value: DFS.indexOf(dfName),
         })),
+        monitorValue: 'distanceFn',
       });
     }
     this.addControl('areaMode', 'Show Nearest:', { monitorValue: 'areaMode' });
@@ -214,6 +216,14 @@ export default class App extends PixelCanvas {
       return Math.sqrt(dot(v, v));
     }
 
+    function norm(v) {
+      const len = card(v);
+      if (len > 0) {
+        return [v[0] / len, v[1] / len];
+      }
+      return [0, 0];
+    }
+
     function dotDist(a, b) {
       const v = -dot(a, b);
       return (1 + v / (1 + Math.abs(v))) * 0.4;
@@ -246,6 +256,9 @@ export default class App extends PixelCanvas {
     }
     if (distanceFn === DF_DOT) {
       return dotDist(vecA, vecB);
+    }
+    if (distanceFn === DF_L2_PROJ) {
+      return l2Dist(vecA, norm(vecB));
     }
     throw new Error(`unknown distance function: ${distanceFn}`);
   }
