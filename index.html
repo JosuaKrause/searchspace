@@ -47,14 +47,11 @@
   <body>
     <div class="hmain">
       <div class="vmain">
-        <div class="header">Visualization of Various Similarity Measures</div>
+        <div id="header" class="header"></div>
         <div id="topbar" class="topbar"></div>
         <div id="main" class="main"></div>
         <div id="bottombar" class="bottombar"></div>
-        <div class="footer">
-          Add points by clicking and remove the currently closest point via
-          Shift+Click.
-        </div>
+        <div id="footer" class="footer"></div>
       </div>
     </div>
     <div id="error"></div>
@@ -62,6 +59,13 @@
   <script type="module" defer>
     import App from './js/app.js';
 
-    new App('#main', '#topbar', '#bottombar', '#error').repaint();
+    new App(
+      '#main',
+      '#header',
+      '#footer',
+      '#topbar',
+      '#bottombar',
+      '#error',
+    ).repaint();
   </script>
 </html>

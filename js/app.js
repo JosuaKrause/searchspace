@@ -17,7 +17,15 @@ export const DF_L2_PROJ = 'Unit L2';
 const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT, DF_L2_PROJ];
 
 export default class App extends PixelCanvas {
-  constructor(canvasId, topbarId, bottombarId, errorId, settings) {
+  constructor(
+    canvasId,
+    headerId,
+    footerId,
+    topbarId,
+    bottombarId,
+    errorId,
+    settings,
+  ) {
     super(
       canvasId,
       topbarId,
@@ -29,8 +37,11 @@ export default class App extends PixelCanvas {
       600,
       1.1,
     );
+    this.headerId = headerId;
+    this.footerId = footerId;
     this.ch = new ConvexHull();
     this.settings = {
+      title: 'Visualization of Various Similarity Measures',
       unitCircle: true,
       allowUnitCircle: true,
       convexHull: true,
@@ -49,11 +60,31 @@ export default class App extends PixelCanvas {
     };
   }
 
+  addHeaderAndFooter(settings) {
+    const head = document.createElement('span');
+    head.textContent = settings.title;
+    const header = document.querySelector(this.headerId);
+    header.appendChild(head);
+    const footNormal = document.createElement('span');
+    footNormal.classList.add('normalonly');
+    footNormal.textContent =
+      'Add points by clicking and remove the currently closest point via Shift+Click.';
+    const footMobile = document.createElement('span');
+    footMobile.classList.add('mobileonly');
+    footMobile.textContent =
+      'Add points by tapping. Select "Show Nearest" to remove points instead.';
+    const footer = document.querySelector(this.footerId);
+    footer.appendChild(footNormal);
+    footer.appendChild(footMobile);
+  }
+
   async setup() {
     const watermark = await loadImage('./img/watermark.png');
     const settings = this.settings;
     const distanceFn = DFS.indexOf(settings.distanceFn);
     const dfs = settings.metrics;
+
+    this.addHeaderAndFooter(settings);
 
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);

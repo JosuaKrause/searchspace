@@ -47,14 +47,11 @@
   <body>
     <div class="hmain">
       <div class="vmain">
-        <div class="header">L2 and L1 Distance Functions</div>
+        <div id="header" class="header"></div>
         <div id="topbar" class="topbar"></div>
         <div id="main" class="main"></div>
         <div id="bottombar" class="bottombar"></div>
-        <div class="footer">
-          Add points by clicking and remove the currently closest point via
-          Shift+Click.
-        </div>
+        <div id="footer" class="footer"></div>
       </div>
     </div>
     <div id="error"></div>
@@ -62,7 +59,8 @@
   <script type="module" defer>
     import App, { DF_L1, DF_L2 } from './js/app.js';
 
-    new App('#main', '#topbar', '#bottombar', '#error', {
+    new App('#main', '#header', '#footer', '#topbar', '#bottombar', '#error', {
+      title: 'L2 and L1 Distance Functions',
       unitCircle: false,
       allowUnitCircle: false,
       convexHull: false,

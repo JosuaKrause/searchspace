@@ -7,12 +7,30 @@
     line-height: 30px;
 }
 
-.header {
+.header span {
     font-weight: 500;
 }
 
-.footer {
+.footer span {
     font-weight: 300;
+}
+
+.normalonly {
+    display: inline;
+}
+
+.mobileonly {
+    display: none;
+}
+
+@media (hover: none) {
+    .normalonly {
+        display: none;
+    }
+
+    .mobileonly {
+        display: inline;
+    }
 }
 
 input {
