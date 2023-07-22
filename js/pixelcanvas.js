@@ -712,10 +712,12 @@ export default class PixelCanvas {
       if (!mediaRecorder) {
         return;
       }
-      mediaRecorder.stop();
-      videoStream = null;
-      mediaRecorder = null;
-      chunks = [];
+      that.repaint(() => {
+        mediaRecorder.stop();
+        videoStream = null;
+        mediaRecorder = null;
+        chunks = [];
+      });
     }
 
     this.addKeyEventListener(startKey, () => {
