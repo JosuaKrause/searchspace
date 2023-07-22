@@ -114,6 +114,10 @@ canvas {
     flex-grow: 0;
 }
 
+input[type=checkbox] {
+    margin-left: 0;
+}
+
 input.range {
     width: 50px;
 }
