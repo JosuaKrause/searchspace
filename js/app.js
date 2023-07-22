@@ -72,6 +72,9 @@ export default class App extends PixelCanvas {
     });
 
     window.addEventListener('keypress', (e) => {
+      if (this.isTextTarget(e.target)) {
+        return;
+      }
       const ix = e.code.startsWith('Digit') ? +e.code[5] : null;
       if (ix !== null && Number.isFinite(ix) && ix >= 1 && ix <= dfs.length) {
         this.updateValue({
@@ -85,6 +88,9 @@ export default class App extends PixelCanvas {
     });
 
     const onShift = (e) => {
+      if (this.isTextTarget(e.target)) {
+        return;
+      }
       if (e.key === 'Shift') {
         this.updateValue({
           areaMode: e.shiftKey,

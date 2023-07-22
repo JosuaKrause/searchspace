@@ -750,6 +750,19 @@ export default class PixelCanvas {
     this.addKeyEventListener(key, cb);
   }
 
+  isTextTarget(target) {
+    if (!target) {
+      return false;
+    }
+    if (target.localName !== 'input') {
+      return false;
+    }
+    if (target.getAttribute('type') !== 'text') {
+      return false;
+    }
+    return true;
+  }
+
   addKeyEventListener(key, cb) {
     if (!key) {
       return;
@@ -759,9 +772,15 @@ export default class PixelCanvas {
       if (e.defaultPrevented) {
         return;
       }
+      if (this.isTextTarget(e.target)) {
+        return;
+      }
       if (e.key.toLowerCase() === lowerKey) {
-        e.preventDefault();
         cb();
+        if (e.target) {
+          e.target.blur();
+        }
+        e.preventDefault();
       }
     });
   }
