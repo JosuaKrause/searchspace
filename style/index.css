@@ -7,16 +7,36 @@
     line-height: 30px;
 }
 
-.header span {
+.footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+}
+
+.header div, .header span, .header a {
     font-weight: 500;
 }
 
-.footer span {
+.footer div, .footer span, .footer a {
     font-weight: 300;
+    line-height: 20px;
+}
+
+.footer a {
+    color: black;
+}
+
+.footer a:hover, .footer a:focus {
+    color: silver;
+}
+
+.footer a:visited {
+    color: black;
 }
 
 .normalonly {
-    display: inline;
+    display: block;
 }
 
 .mobileonly {
@@ -29,7 +49,7 @@
     }
 
     .mobileonly {
-        display: inline;
+        display: block;
     }
 }
 

@@ -60,31 +60,48 @@ export default class App extends PixelCanvas {
     };
   }
 
-  addHeaderAndFooter(settings) {
-    const head = document.createElement('span');
+  addHeaderAndFooter(settings, urlParams) {
+    const head = document.createElement('div');
     head.textContent = settings.title;
     const header = document.querySelector(this.headerId);
     header.appendChild(head);
-    const footNormal = document.createElement('span');
+    const footNormal = document.createElement('div');
     footNormal.classList.add('normalonly');
     footNormal.textContent =
       'Add points by clicking and remove the currently closest point via Shift+Click.';
-    const footMobile = document.createElement('span');
+    const footMobile = document.createElement('div');
     footMobile.classList.add('mobileonly');
     footMobile.textContent =
       'Add points by tapping. Select "Show Nearest" to remove points instead.';
     const footer = document.querySelector(this.footerId);
     footer.appendChild(footNormal);
     footer.appendChild(footMobile);
+    const ref = urlParams.get('ref');
+    if (ref !== 'medium') {
+      const textA = document.createElement('span');
+      textA.textContent = 'Learn more about this visualization on ';
+      const link = document.createElement('a');
+      link.setAttribute('href', 'https://medium.com/@josua.krause');
+      link.setAttribute('target', '_blank');
+      link.textContent = 'Medium';
+      const textB = document.createElement('span');
+      textB.textContent = '.';
+      const footMedium = document.createElement('div');
+      footMedium.appendChild(textA);
+      footMedium.appendChild(link);
+      footMedium.appendChild(textB);
+      footer.appendChild(footMedium);
+    }
   }
 
   async setup() {
+    const urlParams = new URLSearchParams(window.location.search);
     const watermark = await loadImage('./img/watermark.png');
     const settings = this.settings;
     const distanceFn = DFS.indexOf(settings.distanceFn);
     const dfs = settings.metrics;
 
-    this.addHeaderAndFooter(settings);
+    this.addHeaderAndFooter(settings, urlParams);
 
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
