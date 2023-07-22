@@ -51,8 +51,8 @@ export default class App extends PixelCanvas {
   async setup() {
     const watermark = await loadImage('./img/watermark.png');
     const settings = this.settings;
+    const distanceFn = DFS.indexOf(settings.distanceFn);
     const dfs = settings.metrics;
-    const distanceFn = dfs.indexOf(settings.distanceFn);
 
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
@@ -74,7 +74,7 @@ export default class App extends PixelCanvas {
       const ix = e.code.startsWith('Digit') ? +e.code[5] : null;
       if (ix !== null && Number.isFinite(ix) && ix >= 1 && ix <= dfs.length) {
         this.updateValue({
-          distanceFn: ix - 1,
+          distanceFn: DFS.indexOf(dfs[ix - 1]),
         });
         if (e.target) {
           e.target.blur();
@@ -129,7 +129,7 @@ export default class App extends PixelCanvas {
       const points = [...values.points];
       if (values.areaMode) {
         const [_, ix] = this.getClosest(
-          dfs[values.distanceFn],
+          DFS[values.distanceFn],
           values.points,
           refPosition,
         );
@@ -143,12 +143,14 @@ export default class App extends PixelCanvas {
       });
     });
 
-    this.addControl('distanceFn', 'Metric:', {
-      options: dfs.map((dfName, dfIx) => ({
-        text: dfName,
-        value: dfIx,
-      })),
-    });
+    if (dfs.length > 1) {
+      this.addControl('distanceFn', 'Metric:', {
+        options: dfs.map((dfName, dfIx) => ({
+          text: dfName,
+          value: DFS.indexOf(dfs[dfIx]),
+        })),
+      });
+    }
     this.addControl('areaMode', 'Show Nearest:', { monitorValue: 'areaMode' });
     if (settings.allowUnitCircle) {
       this.addControl('unitCircle', 'Unit Circle:', {});
@@ -182,7 +184,7 @@ export default class App extends PixelCanvas {
       const [x, y] = values.refPosition;
       const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
       const [dist, _] = this.getClosest(
-        dfs[values.distanceFn],
+        DFS[values.distanceFn],
         values.points,
         values.refPosition,
       );

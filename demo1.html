@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cosine Similarity Function</title>
+    <meta
+      property="og:url"
+      content="https://josuakrause.github.io/searchspace/demo0.html"
+    />
+    <meta
+      property="og:title"
+      content="Live Demo – Cosine Similarity Function"
+    />
+    <meta
+      property="og:description"
+      content="Understanding cosine similarity with the help of the unit circle."
+    />
+    <meta property="og:image" content="./media/thumb1.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="800" />
+    <meta property="og:image:height" content="600" />
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="./style/index.css" />
+    <script src="./lib/gl-matrix-min.js" defer></script>
+  </head>
+  <body>
+    <div class="hmain">
+      <div class="vmain">
+        <div class="header">Cosine Similarity Function</div>
+        <div id="topbar" class="topbar"></div>
+        <div id="main" class="main"></div>
+        <div id="bottombar" class="bottombar"></div>
+        <div class="footer">
+          Add points by clicking and remove the currently closest point via
+          Shift+Click.
+        </div>
+      </div>
+    </div>
+    <div id="error"></div>
+  </body>
+  <script type="module" defer>
+    import App, { DF_COS } from './js/app.js';
+
+    new App('#main', '#topbar', '#bottombar', '#error', {
+      unitCircle: true,
+      allowUnitCircle: true,
+      convexHull: false,
+      allowConvexHull: false,
+      distanceFn: DF_COS,
+      metrics: [DF_COS],
+    }).repaint();
+  </script>
+</html>
