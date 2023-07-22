@@ -154,9 +154,11 @@ export default class App extends PixelCanvas {
 
     const canvas = this.getCanvas();
     canvas.addEventListener('touchmove', (e) => {
+      const values = this.getValues();
       const refPosition = convertTouchPosition(
         this.getCanvas(),
         this.getMeasures(),
+        values.showGrid,
         e,
       );
       this.updateValue({
@@ -165,9 +167,11 @@ export default class App extends PixelCanvas {
       e.preventDefault();
     });
     canvas.addEventListener('mousemove', (e) => {
+      const values = this.getValues();
       const refPosition = convertMousePosition(
         this.getCanvas(),
         this.getMeasures(),
+        values.showGrid,
         e,
       );
       this.updateValue({
@@ -175,12 +179,13 @@ export default class App extends PixelCanvas {
       });
     });
     canvas.addEventListener('click', (e) => {
+      const values = this.getValues();
       const refPosition = convertMousePosition(
         this.getCanvas(),
         this.getMeasures(),
+        values.showGrid,
         e,
       );
-      const values = this.getValues();
       const points = [...values.points];
       if (values.areaMode) {
         const [_, ix] = this.getClosest(

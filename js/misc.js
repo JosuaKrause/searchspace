@@ -124,7 +124,7 @@ export async function loadText(path) {
   return (await fetch(path)).text();
 }
 
-export function convertMousePosition(canvas, measures, e) {
+export function convertMousePosition(canvas, measures, snap, e) {
   const rect = canvas.getBoundingClientRect();
   const pixelX = ((e.clientX - rect.left) / rect.width) * measures.width;
   const pixelY = ((e.clientY - rect.top) / rect.height) * measures.height;
@@ -132,10 +132,17 @@ export function convertMousePosition(canvas, measures, e) {
   const halfH = measures.height * 0.5;
   const orthoX = ((pixelX - halfW) / halfW) * measures.maxX;
   const orthoY = (-(pixelY - halfH) / halfH) * measures.maxY;
+  if (snap) {
+    const snapGrid = 0.1;
+    return [
+      Math.round(orthoX / snapGrid) * snapGrid,
+      Math.round(orthoY / snapGrid) * snapGrid,
+    ];
+  }
   return [orthoX, orthoY];
 }
 
-export function convertTouchPosition(canvas, measures, e) {
+export function convertTouchPosition(canvas, measures, snap, e) {
   const [x, y, w] = [...e.touches].reduce(
     (p, t) => {
       const weight = t.force;
@@ -147,7 +154,7 @@ export function convertTouchPosition(canvas, measures, e) {
     },
     [0, 0, 0],
   );
-  return convertMousePosition(canvas, measures, {
+  return convertMousePosition(canvas, measures, snap, {
     clientX: x / w,
     clientY: y / w,
   });
