@@ -57,6 +57,7 @@ export default class App extends PixelCanvas {
     this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
+    this.addValue('showCursor', 'uShowCursor', 'bool', false);
     this.addValue('unitCircle', 'uUnitCircle', 'bool', settings.unitCircle);
     this.addValue('convexHull', 'uConvexHull', 'bool', settings.convexHull);
     this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
@@ -169,6 +170,12 @@ export default class App extends PixelCanvas {
     this.addControl('showGrid', 'Grid:', {});
 
     this.addCapture('Save', 'S');
+    this.addPrerenderHook((values) => {
+      if (this.isRecording()) {
+        values.showCursor = values.areaMode;
+      }
+      return values;
+    });
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
 
     this.addStatus((values) => {

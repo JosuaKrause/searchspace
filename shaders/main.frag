@@ -6,6 +6,7 @@ uniform highp vec2 uRefPosition;
 uniform highp float uCorrection;
 uniform int uAreaMode;
 uniform int uShowGrid;
+uniform int uShowCursor;
 uniform int uUnitCircle;
 uniform int uConvexHull;
 uniform int uDistanceFn;
@@ -283,6 +284,7 @@ void main(void) {
     bool isAreaMode = uAreaMode != 0;
     bool showUnitCircle = uUnitCircle != 0;
     bool showConvexHull = uConvexHull != 0;
+    bool showCursor = uShowCursor != 0;
     bool showGrid = uShowGrid != 0;
 
     // Main Background
@@ -318,6 +320,11 @@ void main(void) {
     bool isRefNear = isAreaMode ? nearestIx == closestRefIx : nearestIx < 0;
     vec4 nearestColor = isRefNear ? COLOR_POINT_REF : COLOR_POINT;
     gl_FragColor = fillCircle(gl_FragColor, nearestPos, uUnit.x * 10., nearestColor, 2);
+
+    if(showCursor) {
+        vec4 cursorColor = vec4(1. - gl_FragColor.rgb, 1.);
+        gl_FragColor = fillCircle(gl_FragColor, uRefPosition, uUnit.x * 10., cursorColor, 2);
+    }
 
     // Projected Dots
     if(showUnitCircle) {
