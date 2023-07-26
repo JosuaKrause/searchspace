@@ -364,7 +364,7 @@ void main(void) {
 
     // Grid
     if(showGrid) {
-        if((mod(vPos.x, 1.) < .5) != mod(vPos.y, 1.) < .5) {
+        if((mod(vPos.x, 1.) < .5) != (mod(vPos.y, 1.) < .5)) {
             gl_FragColor.rgb = 1. - gl_FragColor.rgb;
         }
     }
