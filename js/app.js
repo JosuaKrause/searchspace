@@ -81,7 +81,10 @@ export default class App extends PixelCanvas {
       const textA = document.createElement('span');
       textA.textContent = 'Learn more about this visualization on ';
       const link = document.createElement('a');
-      link.setAttribute('href', 'https://medium.com/@josua.krause');
+      link.setAttribute(
+        'href',
+        'https://medium.com/@josua.krause/dot-product-is-a-bad-distance-function-aff7667da6cc',
+      );
       link.setAttribute('target', '_blank');
       link.textContent = 'Medium';
       const textB = document.createElement('span');
