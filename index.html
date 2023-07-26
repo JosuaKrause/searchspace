@@ -42,6 +42,21 @@
     />
     <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico" />
     <link rel="stylesheet" href="./style/index.css" />
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-4DHJEMESJD"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+
+      gtag('config', 'G-4DHJEMESJD');
+    </script>
+    <!-- Google tag end -->
     <script src="./lib/gl-matrix-min.js" defer></script>
   </head>
   <body>
@@ -55,6 +70,14 @@
       </div>
     </div>
     <div id="error"></div>
+    <footer>
+      <div class="footer-style">
+        © jk 2023
+        <a href="https://github.com/JosuaKrause/searchspace" target="_blank">
+          [source]
+        </a>
+      </div>
+    </footer>
   </body>
   <script type="module" defer>
     import App from './js/app.js';

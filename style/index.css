@@ -27,12 +27,12 @@
     color: black;
 }
 
-.footer a:hover, .footer a:focus {
-    color: silver;
-}
-
 .footer a:visited {
     color: black;
+}
+
+.footer a:hover, .footer a:focus {
+    color: #444;
 }
 
 .normalonly {
@@ -199,4 +199,33 @@ input.invalid {
 
 #error:empty {
     display: none;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.footer-style {
+    padding: 10px;
+    text-align: right;
+    filter: drop-shadow(0 0 4px white) drop-shadow(0 0 4px white) drop-shadow(0 0 4px white) drop-shadow(0 0 4px white);
+    font-weight: 300;
+}
+
+.footer-style a {
+    font-weight: 300;
+    color: black;
+    pointer-events: fill;
+}
+
+.footer-style a:visited {
+    color: black;
+}
+
+.footer-style a:hover, .footer-style a:focus {
+    color: #444;
 }
