@@ -83,7 +83,7 @@ export default class App extends PixelCanvas {
       const link = document.createElement('a');
       link.setAttribute(
         'href',
-        'https://medium.com/@josua.krause/dot-product-is-a-bad-distance-function-aff7667da6cc',
+        'https://medium.com/@josua.krause/aff7667da6cc?source=friends_link&sk=1a7e02ec41f35b625fe5eb08da8623cb',
       );
       link.setAttribute('target', '_blank');
       link.textContent = 'Medium';
