@@ -5,12 +5,13 @@
   font-variant: normal;
   font-weight: 400;
   line-height: 30px;
+  box-sizing: border-box;
 }
 
 @media (hover: none) {
   * {
-    font-size: 32px;
-    line-height: 45px;
+    font-size: 4vw;
+    line-height: 7vw;
   }
 }
 
@@ -39,10 +40,10 @@ a:focus {
   .header div,
   .header span,
   .header a {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    font-size: 38px;
-    line-height: 45px;
+    margin-top: 4vw;
+    margin-bottom: 4vw;
+    font-size: 4vw;
+    line-height: 7vw;
   }
 }
 
@@ -68,8 +69,8 @@ a:focus {
   .footer div,
   .footer span,
   .footer a {
-    line-height: 40px;
-    margin-bottom: 10px;
+    line-height: 7vw;
+    margin-bottom: 3vw;
   }
 
   .footer div {
@@ -83,12 +84,6 @@ footer {
   width: 100%;
   z-index: 1;
   pointer-events: none;
-}
-
-@media (hover: none) {
-  footer {
-    width: 99vw;
-  }
 }
 
 .footer-style {
@@ -127,14 +122,31 @@ input {
   vertical-align: middle;
 }
 
+input[type='checkbox'] {
+  margin-left: 0;
+}
+
+input.range {
+  width: 50px;
+}
+
+input.rangeedit {
+  width: 2em;
+}
+
+input.invalid {
+  color: white;
+  background-color: crimson;
+}
+
 @media (hover: none) {
   input {
-    line-height: 40px;
+    line-height: 7vw;
   }
 
   input[type='checkbox'],
   input[type='range'] {
-    zoom: 2;
+    zoom: 3;
   }
 }
 
@@ -158,6 +170,18 @@ canvas {
   margin: 0;
   padding: 0;
   touch-action: manipulation;
+}
+
+@media (hover: none) {
+  .main {
+    width: 100%;
+    height: auto;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
 }
 
 .topbar {
@@ -193,7 +217,7 @@ canvas {
 
 @media (hover: none) {
   .topbar > div {
-    margin-bottom: 15px;
+    margin-bottom: 2vw;
     flex-grow: 0;
   }
 
@@ -230,7 +254,7 @@ canvas {
 @media (hover: none) {
   .bottombar > div,
   .bottombar > input {
-    margin-bottom: 15px;
+    margin-bottom: 3vw;
     flex-grow: 0;
   }
 
@@ -262,30 +286,6 @@ canvas {
   align-items: center;
   flex-direction: column;
   flex-grow: 0;
-}
-
-/* @media (hover: none) {
-  .vmain {
-    flex-direction: row;
-    overflow: auto;
-  }
-} */
-
-input[type='checkbox'] {
-  margin-left: 0;
-}
-
-input.range {
-  width: 50px;
-}
-
-input.rangeedit {
-  width: 2em;
-}
-
-input.invalid {
-  color: white;
-  background-color: crimson;
 }
 
 .videocounter {
