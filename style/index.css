@@ -47,7 +47,7 @@ a:focus {
   }
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+@media (hover: none) and (orientation: landscape) {
   .header div,
   .header span,
   .header a {
@@ -87,7 +87,7 @@ a:focus {
   }
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+@media (hover: none) and (orientation: landscape) {
   .footer {
     flex-direction: row;
     justify-content: space-between;
@@ -216,14 +216,11 @@ canvas {
   }
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+@media (hover: none) and (orientation: landscape) {
   .main {
     width: auto;
     height: 100vh;
     box-sizing: content-box;
-    position: fixed;
-    top: 0;
-    right: 0;
   }
 
   canvas {
@@ -232,9 +229,6 @@ canvas {
   }
 
   .videocounter {
-    position: fixed;
-    top: 0;
-    right: 0;
     width: auto !important;
     height: 100vh !important;
   }
@@ -255,7 +249,7 @@ canvas {
   }
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+@media (hover: none) and (orientation: landscape) {
   .topbar {
     flex-direction: column;
     justify-content: space-between;
@@ -309,9 +303,9 @@ canvas {
   }
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+@media (hover: none) and (orientation: landscape) {
   .bottombar {
-    flex-wrap: wrap;
+    flex-direction: column;
   }
 }
 
@@ -342,9 +336,8 @@ canvas {
   font-family: 'Courier New', Courier, monospace;
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+@media (hover: none) and (orientation: landscape) {
   .refstatus {
-    font-size: 75%;
     width: 100%;
   }
 }
@@ -365,14 +358,9 @@ canvas {
   flex-grow: 0;
 }
 
-@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
-  .hmain {
-    justify-content: start;
-    align-items: start;
-  }
-
+@media (hover: none) and (orientation: landscape) {
   .vmain {
-    max-width: 30vw;
+    flex-direction: row;
   }
 }
 
