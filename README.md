@@ -18,7 +18,7 @@ For convenience the `make run-web` command exists to start a local file server.
 
 After recording a video using the `Record` button it is saved in the `webm` format.
 If a `gif` is needed, the `make convert INPUT=~/Downloads/video.webm` converts the
-`webm` video and places the `gif` version into the same folder. `ffmpeg` is required.
+specified `webm` video and places the `gif` version into the same folder. `ffmpeg` is required.
 
 ## Contributing
 
