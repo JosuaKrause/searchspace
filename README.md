@@ -1,6 +1,6 @@
 # Visualization for Various Similarity Functions
 
-[![The euclidean distance forming voronoi regions.](media/thumbnail.png)](https://josuakrause.github.io/searchspace/)
+[![The euclidean distance forming voronoi regions.](media/demo0.gif)](https://josuakrause.github.io/searchspace/)
 
 This visualization shows distances of various similarity functions in a 2D vector space.
 Choose the distance function from the menu or use the number keys to quickly switch between them.
