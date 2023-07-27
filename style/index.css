@@ -47,15 +47,6 @@ a:focus {
   }
 }
 
-/* @media (hover: none) and (orientation: landscape) {
-  .header div,
-  .header span,
-  .header a {
-    font-size: 3vh;
-    line-height: 3vh;
-  }
-} */
-
 .footer {
   display: flex;
   flex-direction: column;
@@ -86,14 +77,6 @@ a:focus {
     width: 100%;
   }
 }
-
-/* @media (hover: none) and (orientation: landscape) {
-  .footer {
-    flex-direction: row;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-} */
 
 footer {
   position: fixed;
@@ -221,24 +204,6 @@ canvas {
   }
 }
 
-/* @media (hover: none) and (orientation: landscape) {
-  .main {
-    width: auto;
-    height: 100vh;
-    box-sizing: content-box;
-  }
-
-  canvas {
-    width: auto !important;
-    height: 100vh !important;
-  }
-
-  .videocounter {
-    width: auto !important;
-    height: 100vh !important;
-  }
-} */
-
 .topbar {
   display: flex;
   justify-content: flex-start;
@@ -253,14 +218,6 @@ canvas {
     flex-wrap: wrap;
   }
 }
-
-/* @media (hover: none) and (orientation: landscape) {
-  .topbar {
-    flex-direction: column;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-} */
 
 .topbar > div {
   margin-right: 5px;
@@ -308,12 +265,6 @@ canvas {
   }
 }
 
-/* @media (hover: none) and (orientation: landscape) {
-  .bottombar {
-    flex-direction: column;
-  }
-} */
-
 .bottombar > div,
 .bottombar > input {
   margin-right: 5px;
@@ -341,12 +292,6 @@ canvas {
   font-family: 'Courier New', Courier, monospace;
 }
 
-/* @media (hover: none) and (orientation: landscape) {
-  .refstatus {
-    width: 100%;
-  }
-} */
-
 .hmain {
   display: flex;
   justify-content: center;
@@ -373,12 +318,6 @@ canvas {
     justify-content: start;
   }
 }
-
-/* @media (hover: none) and (orientation: landscape) {
-  .vmain {
-    flex-direction: row;
-  }
-} */
 
 #error {
   position: fixed;
