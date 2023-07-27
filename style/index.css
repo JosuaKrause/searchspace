@@ -8,16 +8,16 @@
   box-sizing: border-box;
 }
 
-@media (hover: none) and (orientation: portrait) {
-  * {
-    font-size: 4vw;
-    line-height: 7vw;
-  }
-}
-
 body {
   margin: 0;
   padding: 0;
+}
+
+@media (hover: none) and (max-width: 480px) {
+  * {
+    font-size: 16px;
+    line-height: 32px;
+  }
 }
 
 a,
@@ -36,25 +36,25 @@ a:focus {
   font-weight: 500;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .header div,
   .header span,
   .header a {
-    margin-top: 4vw;
-    margin-bottom: 4vw;
-    font-size: 4vw;
-    line-height: 7vw;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    font-size: 16px;
+    line-height: 32px;
   }
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) and (orientation: landscape) {
   .header div,
   .header span,
   .header a {
     font-size: 3vh;
     line-height: 3vh;
   }
-}
+} */
 
 .footer {
   display: flex;
@@ -70,7 +70,7 @@ a:focus {
   line-height: 20px;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .footer {
     align-items: start;
   }
@@ -78,8 +78,8 @@ a:focus {
   .footer div,
   .footer span,
   .footer a {
-    line-height: 7vw;
-    margin-bottom: 3vw;
+    line-height: 26px;
+    margin-bottom: 5px;
   }
 
   .footer div {
@@ -87,13 +87,13 @@ a:focus {
   }
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) and (orientation: landscape) {
   .footer {
     flex-direction: row;
     justify-content: space-between;
     flex-wrap: wrap;
   }
-}
+} */
 
 footer {
   position: fixed;
@@ -101,6 +101,14 @@ footer {
   width: 100%;
   z-index: 1;
   pointer-events: none;
+}
+
+@media (hover: none) and (max-width: 480px) {
+  footer {
+    display: none;
+    width: 100%;
+    bottom: 0;
+  }
 }
 
 .footer-style {
@@ -156,14 +164,14 @@ input.invalid {
   background-color: crimson;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   input {
-    line-height: 7vw;
+    line-height: 32px;
   }
 
   input[type='checkbox'],
   input[type='range'] {
-    zoom: 3;
+    zoom: 2;
   }
 }
 
@@ -204,7 +212,7 @@ canvas {
   user-select: none;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .main {
     width: 100%;
     height: auto;
@@ -216,7 +224,7 @@ canvas {
   }
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) and (orientation: landscape) {
   .main {
     width: auto;
     height: 100vh;
@@ -232,7 +240,7 @@ canvas {
     width: auto !important;
     height: 100vh !important;
   }
-}
+} */
 
 .topbar {
   display: flex;
@@ -242,20 +250,20 @@ canvas {
   width: 100%;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .topbar {
     justify-content: space-between;
     flex-wrap: wrap;
   }
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) and (orientation: landscape) {
   .topbar {
     flex-direction: column;
     justify-content: space-between;
     flex-wrap: wrap;
   }
-}
+} */
 
 .topbar > div {
   margin-right: 5px;
@@ -278,9 +286,9 @@ canvas {
   user-select: none;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .topbar > div {
-    margin-bottom: 2vw;
+    margin-bottom: 3px;
     flex-grow: 0;
   }
 
@@ -297,17 +305,17 @@ canvas {
   width: 100%;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .bottombar {
     flex-wrap: wrap;
   }
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) and (orientation: landscape) {
   .bottombar {
     flex-direction: column;
   }
-}
+} */
 
 .bottombar > div,
 .bottombar > input {
@@ -320,10 +328,10 @@ canvas {
   text-align: right;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) and (max-width: 480px) {
   .bottombar > div,
   .bottombar > input {
-    margin-bottom: 3vw;
+    margin-bottom: 5px;
     flex-grow: 0;
   }
 
@@ -336,11 +344,11 @@ canvas {
   font-family: 'Courier New', Courier, monospace;
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) and (orientation: landscape) {
   .refstatus {
     width: 100%;
   }
-}
+} */
 
 .hmain {
   display: flex;
@@ -358,11 +366,22 @@ canvas {
   flex-grow: 0;
 }
 
-@media (hover: none) and (orientation: landscape) {
+@media (hover: none) and (max-width: 480px) {
+  .hmain {
+    justify-content: start;
+    align-items: start;
+  }
+
+  .vmain {
+    justify-content: start;
+  }
+}
+
+/* @media (hover: none) and (orientation: landscape) {
   .vmain {
     flex-direction: row;
   }
-}
+} */
 
 #error {
   position: fixed;
