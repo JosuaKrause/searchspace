@@ -7,7 +7,7 @@
   line-height: 30px;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   * {
     font-size: 32px;
     line-height: 45px;
@@ -60,7 +60,7 @@ a:focus {
   line-height: 20px;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   .footer {
     align-items: start;
   }
@@ -85,7 +85,7 @@ footer {
   pointer-events: none;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   footer {
     width: 99vw;
   }
@@ -112,7 +112,7 @@ footer {
   display: none;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   .normalonly {
     display: none;
   }
@@ -127,7 +127,7 @@ input {
   vertical-align: middle;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   input {
     line-height: 40px;
   }
@@ -168,7 +168,7 @@ canvas {
   width: 100%;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   .topbar {
     justify-content: space-between;
     flex-wrap: wrap;
@@ -191,7 +191,7 @@ canvas {
   margin-right: 0;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   .topbar > div {
     margin-bottom: 15px;
     flex-grow: 0;
@@ -210,7 +210,7 @@ canvas {
   width: 100%;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   .bottombar {
     flex-wrap: wrap;
   }
@@ -227,7 +227,7 @@ canvas {
   text-align: right;
 }
 
-@media (hover: none) and (orientation: portrait) {
+@media (hover: none) {
   .bottombar > div,
   .bottombar > input {
     margin-bottom: 15px;
@@ -264,12 +264,12 @@ canvas {
   flex-grow: 0;
 }
 
-@media (hover: none) and (orientation: landscape) {
+/* @media (hover: none) {
   .vmain {
     flex-direction: row;
     overflow: auto;
   }
-}
+} */
 
 input[type='checkbox'] {
   margin-left: 0;
