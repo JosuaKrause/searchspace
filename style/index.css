@@ -103,14 +103,6 @@ footer {
   pointer-events: none;
 }
 
-@media (hover: none) and (max-width: 480px) {
-  footer {
-    display: none;
-    width: 100%;
-    bottom: 0;
-  }
-}
-
 .footer-style {
   padding: 10px;
   text-align: right;
@@ -219,6 +211,11 @@ canvas {
   }
 
   canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .videocounter {
     width: 100% !important;
     height: auto !important;
   }
