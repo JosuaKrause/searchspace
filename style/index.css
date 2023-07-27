@@ -8,7 +8,7 @@
   box-sizing: border-box;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
   * {
     font-size: 4vw;
     line-height: 7vw;
@@ -36,7 +36,7 @@ a:focus {
   font-weight: 500;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
   .header div,
   .header span,
   .header a {
@@ -44,6 +44,15 @@ a:focus {
     margin-bottom: 4vw;
     font-size: 4vw;
     line-height: 7vw;
+  }
+}
+
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+  .header div,
+  .header span,
+  .header a {
+    font-size: 3vh;
+    line-height: 3vh;
   }
 }
 
@@ -61,7 +70,7 @@ a:focus {
   line-height: 20px;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
   .footer {
     align-items: start;
   }
@@ -75,6 +84,14 @@ a:focus {
 
   .footer div {
     width: 100%;
+  }
+}
+
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 }
 
@@ -139,7 +156,7 @@ input.invalid {
   background-color: crimson;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
   input {
     line-height: 7vw;
   }
@@ -172,7 +189,22 @@ canvas {
   touch-action: manipulation;
 }
 
-@media (hover: none) {
+.videocounter {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 0;
+  left: 0;
+  color: white;
+  text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
+    1px 1px 0 black;
+  opacity: 75%;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (hover: none) and (orientation: portrait) {
   .main {
     width: 100%;
     height: auto;
@@ -184,6 +216,30 @@ canvas {
   }
 }
 
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+  .main {
+    width: auto;
+    height: 100vh;
+    box-sizing: content-box;
+    position: fixed;
+    top: 0;
+    right: 0;
+  }
+
+  canvas {
+    width: auto !important;
+    height: 100vh !important;
+  }
+
+  .videocounter {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: auto !important;
+    height: 100vh !important;
+  }
+}
+
 .topbar {
   display: flex;
   justify-content: flex-start;
@@ -192,8 +248,16 @@ canvas {
   width: 100%;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
   .topbar {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+  .topbar {
+    flex-direction: column;
     justify-content: space-between;
     flex-wrap: wrap;
   }
@@ -215,7 +279,12 @@ canvas {
   margin-right: 0;
 }
 
-@media (hover: none) {
+.topbar label {
+  vertical-align: middle;
+  user-select: none;
+}
+
+@media (hover: none) and (orientation: portrait) {
   .topbar > div {
     margin-bottom: 2vw;
     flex-grow: 0;
@@ -234,7 +303,13 @@ canvas {
   width: 100%;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
+  .bottombar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
   .bottombar {
     flex-wrap: wrap;
   }
@@ -251,7 +326,7 @@ canvas {
   text-align: right;
 }
 
-@media (hover: none) {
+@media (hover: none) and (orientation: portrait) {
   .bottombar > div,
   .bottombar > input {
     margin-bottom: 3vw;
@@ -267,9 +342,11 @@ canvas {
   font-family: 'Courier New', Courier, monospace;
 }
 
-.topbar label {
-  vertical-align: middle;
-  user-select: none;
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+  .refstatus {
+    font-size: 75%;
+    width: 100%;
+  }
 }
 
 .hmain {
@@ -288,19 +365,15 @@ canvas {
   flex-grow: 0;
 }
 
-.videocounter {
-  position: absolute;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  top: 0;
-  left: 0;
-  color: white;
-  text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
-    1px 1px 0 black;
-  opacity: 75%;
-  pointer-events: none;
-  user-select: none;
+@media (hover: none) and (orientation: landscape) and (min-width: 600px) {
+  .hmain {
+    justify-content: start;
+    align-items: start;
+  }
+
+  .vmain {
+    max-width: 30vw;
+  }
 }
 
 #error {
