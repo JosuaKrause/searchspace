@@ -1,3 +1,11 @@
+if (!Array.prototype.toSorted) {
+  Array.prototype.toSorted = function (compareFn) {
+    const arr = [...this];
+    arr.sort(compareFn);
+    return arr;
+  };
+}
+
 class Point {
   constructor(pos) {
     this._x = pos[0];
