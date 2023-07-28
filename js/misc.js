@@ -155,7 +155,7 @@ export function convertMousePosition(canvas, measures, snap, e) {
 }
 
 export function convertTouchPosition(canvas, measures, snap, e) {
-  const [x, y, w] = [...(e.touches ? e.touches : e.changedTouches].reduce(
+  const [x, y, w] = [...(e.touches ? e.touches : e.changedTouches)].reduce(
     (p, t) => {
       const weight = Number.isFinite(+t.force) ? t.force : 1;
       return [
