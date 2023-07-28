@@ -59,7 +59,9 @@ export default class PixelCanvas {
         if (e.error && e.error.stack) {
           this.writeError(`${e.error.stack}`);
         } else {
-          this.writeError(`${e.message} (${e.filename}:${lineno}:${colno})`);
+          this.writeError(
+            `${e.message} (${e.filename}:${e.lineno}:${e.colno})`,
+          );
         }
       } catch (_) {
         try {
