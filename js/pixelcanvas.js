@@ -58,17 +58,15 @@ export default class PixelCanvas {
       try {
         if (e.error && e.error.stack) {
           this.writeError(`${e.error.stack}`);
-        } else {
+        } else if (e.message) {
           this.writeError(
             `${e.message} (${e.filename}:${e.lineno}:${e.colno})`,
           );
+        } else {
+          this.writeError(`Uncaught Error: ${e.error}`);
         }
       } catch (_) {
-        try {
-          this.writeError(`Uncaught Error: ${e.error}`);
-        } catch (_) {
-          // give up
-        }
+        // can't write -- let normal error reporting handle it
       }
       return false;
     });
