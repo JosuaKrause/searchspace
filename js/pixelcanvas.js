@@ -53,6 +53,23 @@ export default class PixelCanvas {
     this.requestClear = false;
     this.requestFullRepaint = false;
     this.requestRepaint = false;
+
+    window.addEventListener('error', (e) => {
+      try {
+        if (e.error && e.error.stack) {
+          this.writeError(`${e.error.stack}`);
+        } else {
+          this.writeError(`${e.message} (${e.filename}:${lineno}:${colno})`);
+        }
+      } catch (_) {
+        try {
+          this.writeError(`Uncaught Error: ${e.error}`);
+        } catch (_) {
+          // give up
+        }
+      }
+      return false;
+    });
   }
 
   async setup() {
