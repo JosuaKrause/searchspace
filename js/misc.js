@@ -124,20 +124,8 @@ export async function loadText(path) {
   return (await fetch(path)).text();
 }
 
-function getBBox(elem) {
-  if (elem.getBoundingClientRect) {
-    return elem.getBoundingClientRect();
-  }
-  return {
-    left: elem.offsetLeft,
-    top: elem.offsetTop,
-    width: elem.offsetWidth,
-    height: elem.offsetHeight,
-  };
-}
-
 export function convertMousePosition(canvas, measures, snap, e) {
-  const rect = getBBox(canvas);
+  const rect = canvas.getBoundingClientRect();
   const pixelX = ((e.clientX - rect.left) / rect.width) * measures.width;
   const pixelY = ((e.clientY - rect.top) / rect.height) * measures.height;
   const halfW = measures.width * 0.5;
@@ -155,20 +143,18 @@ export function convertMousePosition(canvas, measures, snap, e) {
 }
 
 export function convertTouchPosition(canvas, measures, snap, e) {
-  const [x, y, w] = [...(e.touches ? e.touches : e.changedTouches)].reduce(
+  const totalWeigth = [...e.touches].reduce((p, t) => p + t.force, 0);
+  const hasWeigth = totalWeigth > 0;
+  const [x, y] = [...e.touches].reduce(
     (p, t) => {
-      const weight = Number.isFinite(+t.force) ? t.force : 1;
-      return [
-        p[0] + (t.clientX ?? t.pageX) * weight,
-        p[1] + (t.clientY ?? t.pageY) * weight,
-        p[2] + weight,
-      ];
+      const weight = hasWeigth ? t.force : 1;
+      return [p[0] + t.clientX * weight, p[1] + t.clientY * weight];
     },
-    [0, 0, 0],
+    [0, 0],
   );
   return convertMousePosition(canvas, measures, snap, {
-    clientX: w > 0 ? x / w : x,
-    clientY: w > 0 ? y / w : y,
+    clientX: hasWeigth ? x / totalWeigth : x,
+    clientY: hasWeigth ? y / totalWeigth : y,
   });
 }
 
