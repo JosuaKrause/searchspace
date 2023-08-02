@@ -19,6 +19,9 @@ uniform sampler2D uOutlineTex;
 uniform int uOutlineSize;
 uniform int uOutlineCount;
 
+uniform vec2 uOutlineCenter;
+uniform float uOutlineScale;
+
 uniform sampler2D uWMTex;
 uniform vec2 uWMSize;
 
@@ -47,6 +50,7 @@ varying highp vec2 sPos;
 #define DF_COS 2
 #define DF_DOT 3
 #define DF_L2_PROJ 4
+#define DF_DOT_ADJ 5
 
 const vec4 COLOR_DIST_NEAR = vec4(.0313, .3164, .6094, 1.);
 const vec4 COLOR_DIST_FAR = vec4(.9336, .9492, .9961, 1.);
@@ -146,6 +150,10 @@ float getDistance(int distanceFn, vec2 a, vec2 b) {
     }
     if(distanceFn == DF_L2_PROJ) {
         return l2Dist(a, norm(b));
+    }
+    if(distanceFn == DF_DOT_ADJ) {
+        vec2 adjB = (b - uOutlineCenter) * uOutlineScale;
+        return dotDist(a, adjB);
     }
     return 0.;
 }
@@ -339,13 +347,24 @@ void main(void) {
 
     // Projected Dots
     if(showUnitCircle) {
-        int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
-        vec2 projPos = getPointPos(projIx);
-        projPos = norm(projPos);
-        if(projPos != vec2(0.)) {
+        if(distanceFn == DF_DOT_ADJ) {
+            vec2 tmpPos = (vPos / uOutlineScale) + uOutlineCenter;
+            int projIx = getClosestIx(DF_L2, tmpPos, !isAreaMode);
+            vec2 projPos = getPointPos(projIx);
+            projPos -= uOutlineCenter;
+            projPos *= uOutlineScale;
             bool isRefProj = isAreaMode ? projIx == closestRefIx : projIx < 0;
             vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
             gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
+        } else {
+            int projIx = getClosestIx(DF_COS, vPos, !isAreaMode);
+            vec2 projPos = getPointPos(projIx);
+            projPos = norm(projPos);
+            if(projPos != vec2(0.)) {
+                bool isRefProj = isAreaMode ? projIx == closestRefIx : projIx < 0;
+                vec4 projColor = isRefProj ? COLOR_PROJ_REF : COLOR_PROJ;
+                gl_FragColor = fillCircle(gl_FragColor, projPos, uUnit.x * 10., projColor, 2);
+            }
         }
     }
 
