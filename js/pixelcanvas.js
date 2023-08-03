@@ -550,12 +550,16 @@ export default class PixelCanvas {
     this.postrender.push(cb);
   }
 
+  getRenderValues() {
+    return this.prerender.reduce((vals, cb) => cb(vals), {
+      ...this.getValues(),
+    });
+  }
+
   drawScene() {
     const gl = this.getGL();
     const measures = this.getMeasures();
-    const values = this.prerender.reduce((vals, cb) => cb(vals), {
-      ...this.getValues(),
-    });
+    const values = this.getRenderValues();
     const programInfo = this.programInfo;
     const buffers = this.buffers;
     const valueDefs = this.valueDefs;
