@@ -55,7 +55,7 @@ jobs:
 
       - name: Sync Files
         run: |
-          rsync -av . '${{ env.OUTPUT }}' --files-from '${{ env.LIB_COPY }}'
+          rsync -atv . '${{ env.OUTPUT }}' --files-from '${{ env.LIB_COPY }}'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
