@@ -14,7 +14,8 @@ export const DF_L2 = 'L2';
 export const DF_COS = 'Cos';
 export const DF_DOT = 'Dot';
 export const DF_L2_PROJ = 'Unit L2';
-const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT, DF_L2_PROJ];
+export const DF_DOT_ADJ = 'Adj. Dot';
+const DFS = [DF_L1, DF_L2, DF_COS, DF_DOT, DF_L2_PROJ, DF_DOT_ADJ];
 
 export default class App extends PixelCanvas {
   constructor(
@@ -117,8 +118,25 @@ export default class App extends PixelCanvas {
     this.addValue('correction', 'uCorrection', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', settings.points);
     this.addValue('outline', 'uOutline', 'array2d', []);
+    this.addValue('outlineCenter', 'uOutlineCenter', '2d', [0, 0]);
+    this.addValue('outlineScale', 'uOutlineScale', 'float', 1);
     this.addPrerenderHook((values) => {
       values.outline = this.ch.createLinesArray(values.points);
+      const centerVals = values.outline.reduce(
+        (p, [x, y]) => [p[0] + x, p[1] + y, p[2] + 1],
+        [0, 0, 0],
+      );
+      values.outlineCenter = [
+        centerVals[2] > 0 ? centerVals[0] / centerVals[2] : centerVals[0],
+        centerVals[2] > 0 ? centerVals[1] / centerVals[2] : centerVals[1],
+      ];
+      const distSq = values.outline.reduce((p, [x, y]) => {
+        const dx = x - values.outlineCenter[0];
+        const dy = y - values.outlineCenter[1];
+        const dSq = dx * dx + dy * dy;
+        return Math.max(dSq, p);
+      }, 0);
+      values.outlineScale = distSq > 0 ? 1 / Math.sqrt(distSq) : 1;
       return values;
     });
 
@@ -195,6 +213,7 @@ export default class App extends PixelCanvas {
           DFS[values.distanceFn],
           values.points,
           refPosition,
+          this.getRenderValues(),
         );
         points.splice(ix, 1);
       } else if (points.length < MAX_POINTS) {
@@ -251,6 +270,7 @@ export default class App extends PixelCanvas {
         DFS[values.distanceFn],
         values.points,
         values.refPosition,
+        this.getRenderValues(),
       );
       const distText = `Dist:${precision(dist * values.correction, 5)}`;
       return `${distText} ${posText}`;
@@ -261,7 +281,7 @@ export default class App extends PixelCanvas {
     await super.setup();
   }
 
-  getDistance(distanceFn, vecA, vecB) {
+  getDistance(distanceFn, vecA, vecB, values) {
     function absSum(a) {
       return Math.abs(a[0]) + Math.abs(a[1]);
     }
@@ -322,14 +342,21 @@ export default class App extends PixelCanvas {
     if (distanceFn === DF_L2_PROJ) {
       return l2Dist(vecA, norm(vecB));
     }
+    if (distanceFn === DF_DOT_ADJ) {
+      const adjB = [
+        (vecB[0] - values.outlineCenter[0]) * values.outlineScale,
+        (vecB[1] - values.outlineCenter[1]) * values.outlineScale,
+      ];
+      return dotDist(vecA, adjB);
+    }
     throw new Error(`unknown distance function: ${distanceFn}`);
   }
 
-  getClosest(distanceFn, points, pos) {
+  getClosest(distanceFn, points, pos, renderValues) {
     const eps = 1e-5; // making sure imprecisions don't fuzz results
     return points.reduce(
       ([closestDist, closestIx], ref, ix) => {
-        const curDist = this.getDistance(distanceFn, pos, ref);
+        const curDist = this.getDistance(distanceFn, pos, ref, renderValues);
         if (closestIx < 0 || curDist - closestDist < eps) {
           closestDist = curDist;
           closestIx = ix;
