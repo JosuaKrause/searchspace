@@ -57,6 +57,7 @@ export default class App extends PixelCanvas {
         [0.3, 0.3],
         [-0.4, 0.2],
       ],
+      initRefPos: [0.01, 0.01],
       ...settings,
     };
   }
@@ -113,7 +114,7 @@ export default class App extends PixelCanvas {
     this.addValue('showCursor', 'uShowCursor', 'bool', false);
     this.addValue('unitCircle', 'uUnitCircle', 'bool', settings.unitCircle);
     this.addValue('convexHull', 'uConvexHull', 'bool', settings.convexHull);
-    this.addValue('refPosition', 'uRefPosition', '2d', [0.01, 0.01]);
+    this.addValue('refPosition', 'uRefPosition', '2d', settings.initRefPos);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', distanceFn);
     this.addValue('correction', 'uCorrection', 'range', 2.5);
     this.addValue('points', 'uPoints', 'array2d', settings.points);

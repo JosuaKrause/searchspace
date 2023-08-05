@@ -93,8 +93,17 @@
       allowUnitCircle: true,
       convexHull: true,
       allowConvexHull: true,
-      distanceFn: DF_DOT,
+      distanceFn: DF_DOT_ADJ,
       metrics: [DF_DOT, DF_DOT_ADJ],
+      points: [
+        [-1.1, 0.6],
+        [-1.3, 0.7],
+        [-1.4, 0.8],
+        [-1.4, 1.0],
+        [-1.0, 0.9],
+        [-1.0, 0.8],
+      ],
+      initRefPos: [-1.2, 0.8],
     }).repaint();
   </script>
 </html>
