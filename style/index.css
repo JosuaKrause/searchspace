@@ -1,3 +1,5 @@
+/* general */
+
 * {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -20,6 +22,90 @@ body {
   }
 }
 
+/* pre loading */
+
+@keyframes blink {
+  0% {
+    background-color: white;
+  }
+  50% {
+    background-color: #efefef;
+  }
+  100% {
+    background-color: white;
+  }
+}
+
+.header:empty {
+  width: 400px;
+  height: 29px;
+  transition: all 0.5s ease-in-out;
+  animation: blink normal 2s infinite ease-in-out;
+  filter: blur(5px);
+}
+
+.topbar:empty {
+  width: 802px;
+  height: 31.383px;
+  transition: all 0.5s ease-in-out;
+  animation: blink normal 2s infinite ease-in-out;
+  filter: blur(5px);
+}
+
+.main:empty {
+  width: 802px;
+  height: 602px;
+  border: none;
+  transition: all 0.5s ease-in-out;
+  animation: blink normal 2s infinite ease-in-out;
+  filter: blur(5px);
+}
+
+.bottombar:empty {
+  width: 802px;
+  height: 30px;
+  transition: all 0.5s ease-in-out;
+  animation: blink normal 2s infinite ease-in-out;
+  filter: blur(5px);
+}
+
+.footer:empty {
+  width: 500px;
+  height: 40px;
+  transition: all 0.5s ease-in-out;
+  animation: blink normal 2s infinite ease-in-out;
+  filter: blur(5px);
+}
+
+@media (hover: none) and (max-width: 480px) {
+  .header:empty {
+    width: 70vw;
+    height: 56px;
+  }
+
+  .topbar:empty {
+    width: calc(100vw - 10px);
+    height: 127px;
+  }
+
+  .main:empty {
+    width: 100vw;
+    height: calc(75vw + 0.5px);
+  }
+
+  .bottombar:empty {
+    width: calc(100vw - 10px);
+    height: 67px;
+  }
+
+  .footer:empty {
+    width: 80vw;
+    height: 88px;
+  }
+}
+
+/* links */
+
 a,
 a:visited {
   color: black;
@@ -30,6 +116,12 @@ a:focus {
   color: #444;
 }
 
+/* header */
+
+.header {
+  height: 29px;
+}
+
 .header div,
 .header span,
 .header a {
@@ -37,6 +129,10 @@ a:focus {
 }
 
 @media (hover: none) and (max-width: 480px) {
+  .header {
+    height: auto;
+  }
+
   .header div,
   .header span,
   .header a {
@@ -46,6 +142,8 @@ a:focus {
     line-height: 32px;
   }
 }
+
+/* footer */
 
 .footer {
   display: flex;
@@ -78,6 +176,8 @@ a:focus {
   }
 }
 
+/* copyright */
+
 footer {
   position: fixed;
   bottom: 0;
@@ -99,6 +199,8 @@ footer {
   pointer-events: fill;
 }
 
+/* help text */
+
 .normalonly {
   display: block;
 }
@@ -116,6 +218,8 @@ footer {
     display: block;
   }
 }
+
+/* controls */
 
 input {
   line-height: 20px;
@@ -157,6 +261,8 @@ select {
 label::after {
   content: '\00a0';
 }
+
+/* canvas area */
 
 .main {
   position: relative;
@@ -203,6 +309,8 @@ canvas {
     height: auto !important;
   }
 }
+
+/* control panel */
 
 .topbar {
   display: flex;
@@ -251,6 +359,8 @@ canvas {
   }
 }
 
+/* info panel */
+
 .bottombar {
   display: flex;
   justify-content: flex-start;
@@ -292,6 +402,8 @@ canvas {
   font-family: 'Courier New', Courier, monospace;
 }
 
+/* scene */
+
 .hmain {
   display: flex;
   justify-content: center;
@@ -318,6 +430,8 @@ canvas {
     justify-content: start;
   }
 }
+
+/* errors */
 
 #error {
   position: fixed;
