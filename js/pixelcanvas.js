@@ -47,7 +47,8 @@ export default class PixelCanvas {
     this.prerender = [];
     this.postrender = [];
     this.recordingState = NO_RECORDING;
-    this.isSetup = false;
+    this.isSetupBeforeCanvas = false;
+    this.isSetupAfterCanvas = false;
     this.isDrawing = false;
     this.hidden = false;
     this.requestClear = false;
@@ -72,9 +73,14 @@ export default class PixelCanvas {
     });
   }
 
-  async setup() {
-    // overwrite in sub-class and call `await super.setup()` at the end
-    this.isSetup = true;
+  async setupBeforeCanvas() {
+    // overwrite in sub-class and call `await super.setupBeforeCanvas()` at the end
+    this.isSetupBeforeCanvas = true;
+  }
+
+  async setupAfterCanvas() {
+    // overwrite in sub-class and call `await super.setupAfterCanvas()` at the end
+    this.isSetupAfterCanvas = true;
   }
 
   isHidden() {
@@ -149,6 +155,14 @@ export default class PixelCanvas {
     };
 
     const run = async () => {
+      if (!this.isSetupBeforeCanvas) {
+        await this.setupBeforeCanvas();
+        if (!this.isSetupBeforeCanvas) {
+          throw new Error(
+            'must call `await super.setupBeforeCanvas()` at end of setup!',
+          );
+        }
+      }
       if (this.canvas === null) {
         const canvasDiv = document.querySelector(this.canvasId);
         if (canvasDiv === null) {
@@ -169,10 +183,12 @@ export default class PixelCanvas {
       if (needsSceneSetup) {
         await this.initScene();
       }
-      if (!this.isSetup) {
-        await this.setup();
-        if (!this.isSetup) {
-          throw new Error('must call `await super.setup()` at end of setup!');
+      if (!this.isSetupAfterCanvas) {
+        await this.setupAfterCanvas();
+        if (!this.isSetupAfterCanvas) {
+          throw new Error(
+            'must call `await super.setupAfterCanvas()` at end of setup!',
+          );
         }
       }
       if (needsSceneSetup) {
@@ -190,7 +206,12 @@ export default class PixelCanvas {
       console.error(err);
       this.writeError(err);
     };
-    if (this.canvas !== null && this.gl !== null && this.isSetup) {
+    if (
+      this.canvas !== null &&
+      this.gl !== null &&
+      this.isSetupBeforeCanvas &&
+      this.isSetupAfterCanvas
+    ) {
       // fast path
       try {
         draw();

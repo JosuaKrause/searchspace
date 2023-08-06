@@ -99,16 +99,14 @@ export default class App extends PixelCanvas {
     }
   }
 
-  async setup() {
+  async setupBeforeCanvas() {
     const urlParams = new URLSearchParams(window.location.search);
-    const watermark = await loadImage('./img/watermark.png');
     const settings = this.settings;
     const distanceFn = DFS.indexOf(settings.distanceFn);
     const dfs = settings.metrics;
 
     this.addHeaderAndFooter(settings, urlParams);
 
-    this.addValue('wm', 'uWM', 'image', watermark);
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
     this.addValue('showGrid', 'uShowGrid', 'bool', false);
     this.addValue('showCursor', 'uShowCursor', 'bool', false);
@@ -121,6 +119,7 @@ export default class App extends PixelCanvas {
     this.addValue('outline', 'uOutline', 'array2d', []);
     this.addValue('outlineCenter', 'uOutlineCenter', '2d', [0, 0]);
     this.addValue('outlineScale', 'uOutlineScale', 'float', 1);
+
     this.addPrerenderHook((values) => {
       values.outline = this.ch.createLinesArray(values.points);
       const centerVals = values.outline.reduce(
@@ -173,58 +172,6 @@ export default class App extends PixelCanvas {
     };
     window.addEventListener('keydown', onShift);
     window.addEventListener('keyup', onShift);
-
-    const canvas = this.getCanvas();
-    canvas.addEventListener('touchmove', (e) => {
-      const values = this.getValues();
-      const refPosition = convertTouchPosition(
-        this.getCanvas(),
-        this.getMeasures(),
-        values.showGrid,
-        e,
-      );
-      this.updateValue({
-        refPosition,
-      });
-      e.preventDefault();
-    });
-    canvas.addEventListener('mousemove', (e) => {
-      const values = this.getValues();
-      const refPosition = convertMousePosition(
-        this.getCanvas(),
-        this.getMeasures(),
-        values.showGrid,
-        e,
-      );
-      this.updateValue({
-        refPosition,
-      });
-    });
-    canvas.addEventListener('click', (e) => {
-      const values = this.getValues();
-      const refPosition = convertMousePosition(
-        this.getCanvas(),
-        this.getMeasures(),
-        values.showGrid,
-        e,
-      );
-      const points = [...values.points];
-      if (values.areaMode) {
-        const [_, ix] = this.getClosest(
-          DFS[values.distanceFn],
-          values.points,
-          refPosition,
-          this.getRenderValues(),
-        );
-        points.splice(ix, 1);
-      } else if (points.length < MAX_POINTS) {
-        points.push(refPosition);
-      }
-      this.updateValue({
-        points,
-        refPosition,
-      });
-    });
 
     if (dfs.length > 1) {
       this.addControl('distanceFn', 'Metric:', {
@@ -279,7 +226,66 @@ export default class App extends PixelCanvas {
 
     this.addVisibilityCheck();
 
-    await super.setup();
+    await super.setupBeforeCanvas();
+  }
+
+  async setupAfterCanvas() {
+    const watermark = await loadImage('./img/watermark.png');
+    this.addValue('wm', 'uWM', 'image', watermark);
+
+    const canvas = this.getCanvas();
+    canvas.addEventListener('touchmove', (e) => {
+      const values = this.getValues();
+      const refPosition = convertTouchPosition(
+        this.getCanvas(),
+        this.getMeasures(),
+        values.showGrid,
+        e,
+      );
+      this.updateValue({
+        refPosition,
+      });
+      e.preventDefault();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      const values = this.getValues();
+      const refPosition = convertMousePosition(
+        this.getCanvas(),
+        this.getMeasures(),
+        values.showGrid,
+        e,
+      );
+      this.updateValue({
+        refPosition,
+      });
+    });
+    canvas.addEventListener('click', (e) => {
+      const values = this.getValues();
+      const refPosition = convertMousePosition(
+        this.getCanvas(),
+        this.getMeasures(),
+        values.showGrid,
+        e,
+      );
+      const points = [...values.points];
+      if (values.areaMode) {
+        const [_, ix] = this.getClosest(
+          DFS[values.distanceFn],
+          values.points,
+          refPosition,
+          this.getRenderValues(),
+        );
+        points.splice(ix, 1);
+      } else if (points.length < MAX_POINTS) {
+        points.push(refPosition);
+      }
+      this.updateValue({
+        points,
+        refPosition,
+      });
+    });
+
+    await super.setupAfterCanvas();
   }
 
   getDistance(distanceFn, vecA, vecB, values) {
