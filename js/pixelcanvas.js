@@ -1,3 +1,22 @@
+/*
+ * Searchspace – An interactive visualization for various similarity measures.
+ * Copyright (C) 2024 Josua Krause
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+// @ts-check
+
 import {
   download,
   initPositionBuffer,
@@ -8,33 +27,62 @@ import {
   writeMessage,
 } from './misc.js';
 
+/** @typedef {{
+  width: number,
+  height: number,
+  maxX: number,
+  maxY: number,
+  unitX: number,
+  unitY: number,
+  sizeX: number,
+  sizeY: number,
+  blockX: number,
+  blockY: number,
+}} MeasuresObj */
+/** @typedef {'no_recording' | 'count_down' | 'is_recording'} RecordingState */
+
+/** @type {RecordingState} */
 const NO_RECORDING = 'no_recording';
+/** @type {RecordingState} */
 const COUNT_DOWN = 'count_down';
+/** @type {RecordingState} */
 const IS_RECORDING = 'is_recording';
 
 export default class PixelCanvas {
   constructor(
-    canvasId,
-    topbarId,
-    bottombarId,
-    errorId,
-    vertexShader,
-    fragmentShader,
-    width,
-    height,
-    initMaxY,
+    /** @type {string} */ canvasId,
+    /** @type {string} */ topbarId,
+    /** @type {string} */ bottombarId,
+    /** @type {string} */ errorId,
+    /** @type {string} */ vertexShader,
+    /** @type {string} */ fragmentShader,
+    /** @type {number} */ width,
+    /** @type {number} */ height,
+    /** @type {number} */ initMaxY,
   ) {
+    /** @type {number} */
     this.maxY = initMaxY;
+    /** @type {number} */
     this.width = width;
+    /** @type {number} */
     this.height = height;
+    /** @type {string} */
     this.vertexShader = vertexShader;
+    /** @type {string} */
     this.fragmentShader = fragmentShader;
+    /** @type {string} */
     this.canvasId = canvasId;
+    /** @type {string} */
     this.topbarId = topbarId;
+    /** @type {string} */
     this.bottombarId = bottombarId;
+    /** @type {string} */
     this.errorId = errorId;
+    /** @type {HTMLCanvasElement | null} */
     this.canvas = null;
+    /** @type {WebGL2RenderingContext | null} */
     this.gl = null;
+    /** @type {MeasuresObj | null} */
     this.measures = null;
     this.buffers = {};
     this.programInfo = {
@@ -42,17 +90,25 @@ export default class PixelCanvas {
       attribLocations: {},
       uniformLocations: {},
     };
+    /** @type {{ [key: string]: number }} */
     this.values = {};
     this.valueDefs = [];
     this.prerender = [];
     this.postrender = [];
     this.recordingState = NO_RECORDING;
+    /** @type {boolean} */
     this.isSetupBeforeCanvas = false;
+    /** @type {boolean} */
     this.isSetupAfterCanvas = false;
+    /** @type {boolean} */
     this.isDrawing = false;
+    /** @type {boolean} */
     this.hidden = false;
+    /** @type {boolean} */
     this.requestClear = false;
+    /** @type {boolean} */
     this.requestFullRepaint = false;
+    /** @type {boolean} */
     this.requestRepaint = false;
 
     window.addEventListener('error', (e) => {
@@ -87,7 +143,7 @@ export default class PixelCanvas {
     return this.hidden;
   }
 
-  setHidden(hidden) {
+  setHidden(/** @type {boolean} */ hidden) {
     if (this.hidden === hidden) {
       return;
     }
@@ -172,8 +228,8 @@ export default class PixelCanvas {
           return;
         }
         const canvas = document.createElement('canvas');
-        canvas.setAttribute('width', this.width);
-        canvas.setAttribute('height', this.height);
+        canvas.setAttribute('width', `${this.width}`);
+        canvas.setAttribute('height', `${this.height}`);
         canvas.style.width = `${this.width}px`;
         canvas.style.height = `${this.height}px`;
         canvasDiv.appendChild(canvas);
@@ -201,7 +257,7 @@ export default class PixelCanvas {
     const finish = () => {
       this.isDrawing = false;
     };
-    const finishErr = (err) => {
+    const finishErr = (/** @type {Error} */ err) => {
       finish();
       console.error(err);
       this.writeError(err);
@@ -225,14 +281,27 @@ export default class PixelCanvas {
     }
   }
 
+  repaintWhenReady() {
+    const doRepaint = () => {
+      this.repaint();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', doRepaint);
+    } else {
+      doRepaint();
+    }
+  }
+
   getValues() {
     return this.values;
   }
 
   computeMeasures() {
     const gl = this.getGL();
-    const width = gl.canvas.clientWidth;
-    const height = gl.canvas.clientHeight;
+    const canvas = /** @type {HTMLCanvasElement} */ (gl.canvas);
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
     const maxY = this.maxY;
     const superSampling = 4.0;
     const unitY = (maxY * 2.0) / height / superSampling;
@@ -298,7 +367,16 @@ export default class PixelCanvas {
     return vtype;
   }
 
-  addGenericControl(fullName, prettyName, type, initValue, setValue, info) {
+  /** @typedef {'enum' | 'bool' | 'range'} ControlType */
+
+  addGenericControl(
+    /** @type {string} */ fullName,
+    /** @type {string} */ prettyName,
+    /** @type {ControlType} */ type,
+    /** @type {string} */ initValue,
+    /** @type {(value: string) => void} */ setValue,
+    info,
+  ) {
     const label = document.createElement('label');
     label.setAttribute('for', fullName);
     label.textContent = prettyName;
@@ -309,16 +387,19 @@ export default class PixelCanvas {
     }[type];
     if (!elemType) {
       throw new Error(
-        `unsupported type ${type} for ${fullName} (${shaderName})`,
+        `unsupported type ${type} for ${fullName} (${prettyName})`,
       );
     }
-    const elem = document.createElement(elemType);
-    elem.classList.add(type);
-    elem.setAttribute('id', fullName);
-    elem.setAttribute('name', fullName);
+    const gElem = /** @type {HTMLInputElement | HTMLSelectElement} */ (
+      document.createElement(elemType)
+    );
+    gElem.classList.add(type);
+    gElem.setAttribute('id', fullName);
+    gElem.setAttribute('name', fullName);
     const div = document.createElement('div');
     div.appendChild(label);
     if (type === 'enum') {
+      const elem = /** @type {HTMLSelectElement} */ (gElem);
       info.options.forEach(({ value, text }) => {
         const option = document.createElement('option');
         option.setAttribute('value', value);
@@ -336,6 +417,7 @@ export default class PixelCanvas {
         });
       }
     } else if (type === 'bool') {
+      const elem = /** @type {HTMLInputElement} */ (gElem);
       elem.setAttribute('type', 'checkbox');
       elem.checked = initValue;
       elem.addEventListener('change', () => {
@@ -347,6 +429,7 @@ export default class PixelCanvas {
         });
       }
     } else if (type === 'range') {
+      const elem = /** @type {HTMLInputElement} */ (gElem);
       const maxValue = info['max'];
       const minValue = info['min'];
       const step = info['step'] || 1;
@@ -365,7 +448,7 @@ export default class PixelCanvas {
         const evalue = +edit.value;
         if (Number.isFinite(evalue)) {
           setValue(evalue);
-          elem.value = evalue;
+          elem.value = `${evalue}`;
           edit.classList.remove('invalid');
         } else {
           edit.classList.add('invalid');
@@ -376,7 +459,7 @@ export default class PixelCanvas {
         const rvalue = +elem.value;
         if (evalue !== rvalue) {
           setValue(rvalue);
-          edit.value = rvalue;
+          edit.value = `${rvalue}`;
           edit.classList.remove('invalid');
         }
       });
@@ -389,11 +472,14 @@ export default class PixelCanvas {
       }
     } else {
       throw new Error(
-        `unsupported type ${type} for ${fullName} (${shaderName})`,
+        `unsupported type ${type} for ${fullName} (${prettyName})`,
       );
     }
-    div.appendChild(elem);
+    div.appendChild(gElem);
     const topbar = document.querySelector(this.topbarId);
+    if (!topbar) {
+      throw new Error(`Could not find ${this.topbarId}`);
+    }
     topbar.appendChild(div);
   }
 
@@ -401,6 +487,9 @@ export default class PixelCanvas {
     const div = document.createElement('div');
     div.classList.add('divider');
     const topbar = document.querySelector(this.topbarId);
+    if (!topbar) {
+      throw new Error(`Could not find ${this.topbarId}`);
+    }
     topbar.appendChild(div);
   }
 
@@ -646,9 +735,7 @@ export default class PixelCanvas {
         );
         texIx += 1;
       } else {
-        this.writeError(
-          `unsupported type ${type} for ${name} (${shaderName})`,
-        );
+        this.writeError(`unsupported type ${type} for ${name}`);
       }
     });
 
@@ -807,7 +894,10 @@ export default class PixelCanvas {
     return true;
   }
 
-  addKeyEventListener(key, cb) {
+  addKeyEventListener(
+    /** @type {string} */ key,
+    /** @type {() => void} */ cb,
+  ) {
     if (!key) {
       return;
     }
@@ -821,7 +911,7 @@ export default class PixelCanvas {
       }
       if (e.key.toLowerCase() === lowerKey) {
         cb();
-        if (e.target) {
+        if (e.target && e.target.blur) {
           e.target.blur();
         }
         e.preventDefault();

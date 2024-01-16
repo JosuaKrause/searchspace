@@ -15,20 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+// @ts-check
 
-attribute vec4 aVertexPosition;
+import App, { DF_DOT, DF_DOT_ADJ } from './js/app.js';
 
-uniform mat4 uModelViewMatrix;
-uniform mat4 uProjectionMatrix;
-
-uniform highp vec2 uUnit;
-
-varying highp vec2 vPos;
-varying highp vec2 sPos;
-
-void main(void) {
-    vPos = aVertexPosition.xy * uUnit;
-    sPos = aVertexPosition.xy;
-
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-}
+new App('#main', '#header', '#footer', '#topbar', '#bottombar', '#error', {
+  title: 'Adjusted Dot Product',
+  unitCircle: true,
+  allowUnitCircle: true,
+  convexHull: true,
+  allowConvexHull: true,
+  distanceFn: DF_DOT_ADJ,
+  metrics: [DF_DOT, DF_DOT_ADJ],
+  points: [
+    [-1.1, 0.6],
+    [-1.3, 0.7],
+    [-1.4, 0.8],
+    [-1.4, 1.0],
+    [-1.0, 0.9],
+    [-1.0, 0.8],
+  ],
+  initRefPos: [-1.2, 0.8],
+}).repaintWhenReady();

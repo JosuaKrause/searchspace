@@ -15,20 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+// @ts-check
 
-attribute vec4 aVertexPosition;
+import App, { DF_COS, DF_L2_PROJ } from './js/app.js';
 
-uniform mat4 uModelViewMatrix;
-uniform mat4 uProjectionMatrix;
-
-uniform highp vec2 uUnit;
-
-varying highp vec2 vPos;
-varying highp vec2 sPos;
-
-void main(void) {
-    vPos = aVertexPosition.xy * uUnit;
-    sPos = aVertexPosition.xy;
-
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-}
+new App('#main', '#header', '#footer', '#topbar', '#bottombar', '#error', {
+  title: 'Cosine Similarity Function',
+  unitCircle: true,
+  allowUnitCircle: true,
+  convexHull: false,
+  allowConvexHull: false,
+  distanceFn: DF_COS,
+  metrics: [DF_COS, DF_L2_PROJ],
+}).repaintWhenReady();
