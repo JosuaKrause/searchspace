@@ -36,7 +36,8 @@ import {
  */
 
 /** @type {Mat4} */
-var mat4; /* eslint no-var: off */
+// @ts-ignore Property 'mat4' does not exist on type 'Window & typeof globalThis'.
+var mat4 = window.mat4; /* eslint no-var: off */
 
 /** @typedef {import("./misc").MeasuresObj} MeasuresObj */
 /** @typedef {import("./misc").Buffers} Buffers */
