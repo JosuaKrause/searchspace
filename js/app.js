@@ -26,31 +26,36 @@ import {
 } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
 
-const MAX_POINTS = 36;
-
+/** @typedef {import('./pixelcanvas.js').ValuesObj} ValuesObj */
 /** @typedef {'L1' | 'L2' | 'Cos' | 'Dot' | 'Unit L2' | 'Adj. Dot'} DistanceFunctionName */
-/** @typedef {{
-  title: string,
-  unitCircle: boolean,
-  allowUnitCircle: boolean,
-  convexHull: boolean,
-  allowConvexHull: boolean,
-  distanceFn: DistanceFunctionName,
-  metrics: DistanceFunctionName[],
-  points: number[][],
-  initRefPos: number[],
-}} FullSettings */
-/** @typedef {{
-  title?: string,
-  unitCircle?: boolean,
-  allowUnitCircle?: boolean,
-  convexHull?: boolean,
-  allowConvexHull?: boolean,
-  distanceFn?: DistanceFunctionName,
-  metrics?: DistanceFunctionName[],
-  points?: number[][],
-  initRefPos?: number[],
-}} Settings */
+/**
+ * @typedef {{
+ *   title: string,
+ *   unitCircle: boolean,
+ *   allowUnitCircle: boolean,
+ *   convexHull: boolean,
+ *   allowConvexHull: boolean,
+ *   distanceFn: DistanceFunctionName,
+ *   metrics: DistanceFunctionName[],
+ *   points: number[][],
+ *   initRefPos: number[],
+ * }} FullSettings
+ */
+/**
+ * @typedef {{
+ *   title?: string,
+ *   unitCircle?: boolean,
+ *   allowUnitCircle?: boolean,
+ *   convexHull?: boolean,
+ *   allowConvexHull?: boolean,
+ *   distanceFn?: DistanceFunctionName,
+ *   metrics?: DistanceFunctionName[],
+ *   points?: number[][],
+ *   initRefPos?: number[],
+ * }} Settings
+ */
+
+const MAX_POINTS = 36;
 
 /** @type {DistanceFunctionName} */ export const DF_L1 = 'L1';
 /** @type {DistanceFunctionName} */ export const DF_L2 = 'L2';
@@ -178,7 +183,9 @@ export default class App extends PixelCanvas {
     this.addValue('outlineScale', 'uOutlineScale', 'float', 1);
 
     this.addPrerenderHook((values) => {
-      values.outline = this.ch.createLinesArray(values.points);
+      values.outline = this.ch.createLinesArray(
+        /** @type {number[][]} */ (values.points),
+      );
       const centerVals = values.outline.reduce(
         (p, [x, y]) => [p[0] + x, p[1] + y, p[2] + 1],
         [0, 0, 0],
@@ -188,8 +195,9 @@ export default class App extends PixelCanvas {
         centerVals[2] > 0 ? centerVals[1] / centerVals[2] : centerVals[1],
       ];
       const distSq = values.outline.reduce((p, [x, y]) => {
-        const dx = x - values.outlineCenter[0];
-        const dy = y - values.outlineCenter[1];
+        const outlineCenter = /** @type {number[]} */ (values.outlineCenter);
+        const dx = x - outlineCenter[0];
+        const dy = y - outlineCenter[1];
         const dSq = dx * dx + dy * dy;
         return Math.max(dSq, p);
       }, 0);
@@ -198,7 +206,8 @@ export default class App extends PixelCanvas {
     });
 
     window.addEventListener('keypress', (e) => {
-      if (this.isTextTarget(e.target)) {
+      const target = /** @type {HTMLElement | null} */ (e.target);
+      if (this.isTextTarget(target)) {
         return;
       }
       const ix = e.code.startsWith('Digit') ? +e.code[5] : null;
@@ -206,23 +215,24 @@ export default class App extends PixelCanvas {
         this.updateValue({
           distanceFn: DFS.indexOf(dfs[ix - 1]),
         });
-        if (e.target && e.target.blur) {
-          e.target.blur();
+        if (target && target.blur) {
+          target.blur();
         }
         e.preventDefault();
       }
     });
 
     const onShift = (/** @type {KeyboardEvent} */ e) => {
-      if (this.isTextTarget(e.target)) {
+      const target = /** @type {HTMLElement | null} */ (e.target);
+      if (this.isTextTarget(target)) {
         return;
       }
       if (e.key === 'Shift') {
         this.updateValue({
           areaMode: e.shiftKey,
         });
-        if (e.target && e.target.blur) {
-          e.target.blur();
+        if (target && target.blur) {
+          target.blur();
         }
         e.preventDefault();
       }
@@ -269,15 +279,18 @@ export default class App extends PixelCanvas {
     this.addVideoCapture('Record', 'Stop', 'J', 'K');
 
     this.addStatus((values) => {
-      const [x, y] = values.refPosition;
+      const [x, y] = /** @type {number[]} */ (values.refPosition);
       const posText = `Pos: ${precision(x, 5)} ${precision(y, 5)}`;
       const [dist] = this.getClosest(
-        DFS[values.distanceFn],
-        values.points,
-        values.refPosition,
+        DFS[/** @type {number} */ (values.distanceFn)],
+        /** @type {number[][]} */ (values.points),
+        /** @type {number[]} */ (values.refPosition),
         this.getRenderValues(),
       );
-      const distText = `Dist:${precision(dist * values.correction, 5)}`;
+      const distText = `Dist:${precision(
+        dist * /** @type {number} */ (values.correction),
+        5,
+      )}`;
       return `${distText} ${posText}`;
     });
 
@@ -296,7 +309,7 @@ export default class App extends PixelCanvas {
       const refPosition = convertTouchPosition(
         this.getCanvas(),
         this.getMeasures(),
-        values.showGrid,
+        /** @type {boolean} */ (values.showGrid),
         e,
       );
       this.updateValue({
@@ -309,7 +322,7 @@ export default class App extends PixelCanvas {
       const refPosition = convertMousePosition(
         this.getCanvas(),
         this.getMeasures(),
-        values.showGrid,
+        /** @type {boolean} */ (values.showGrid),
         e,
       );
       this.updateValue({
@@ -321,14 +334,14 @@ export default class App extends PixelCanvas {
       const refPosition = convertMousePosition(
         this.getCanvas(),
         this.getMeasures(),
-        values.showGrid,
+        /** @type {boolean} */ (values.showGrid),
         e,
       );
-      const points = [...values.points];
+      const points = [.../** @type {number[][]} */ (values.points)];
       if (values.areaMode) {
         const [, ix] = this.getClosest(
-          DFS[values.distanceFn],
-          values.points,
+          DFS[/** @type {number} */ (values.distanceFn)],
+          /** @type {number[][]} */ (values.points),
           refPosition,
           this.getRenderValues(),
         );
@@ -345,24 +358,29 @@ export default class App extends PixelCanvas {
     await super.setupAfterCanvas();
   }
 
-  getDistance(distanceFn, vecA, vecB, values) {
-    function absSum(a) {
+  getDistance(
+    /** @type {DistanceFunctionName} */ distanceFn,
+    /** @type {number[]} */ vecA,
+    /** @type {number[]} */ vecB,
+    /** @type {ValuesObj} */ values,
+  ) {
+    function absSum(/** @type {number[]} */ a) {
       return Math.abs(a[0]) + Math.abs(a[1]);
     }
 
-    function sub(a, b) {
+    function sub(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       return [a[0] - b[0], a[1] - b[1]];
     }
 
-    function dot(a, b) {
+    function dot(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       return a[0] * b[0] + a[1] * b[1];
     }
 
-    function card(v) {
+    function card(/** @type {number[]} */ v) {
       return Math.sqrt(dot(v, v));
     }
 
-    function norm(v) {
+    function norm(/** @type {number[]} */ v) {
       const len = card(v);
       if (len > 0) {
         return [v[0] / len, v[1] / len];
@@ -370,24 +388,24 @@ export default class App extends PixelCanvas {
       return [0, 0];
     }
 
-    function dotDist(a, b) {
+    function dotDist(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       const v = -dot(a, b);
       return (1 + v / (1 + Math.abs(v))) * 0.4;
     }
 
-    function cos2d(a, b) {
+    function cos2d(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       return dot(a, b) / card(a) / card(b);
     }
 
-    function cosDist(a, b) {
+    function cosDist(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       return ((1 - cos2d(a, b)) * 0.5) / 0.4;
     }
 
-    function l2Dist(a, b) {
+    function l2Dist(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       return card(sub(a, b));
     }
 
-    function l1Dist(a, b) {
+    function l1Dist(/** @type {number[]} */ a, /** @type {number[]} */ b) {
       return absSum(sub(a, b));
     }
 
@@ -407,16 +425,23 @@ export default class App extends PixelCanvas {
       return l2Dist(vecA, norm(vecB));
     }
     if (distanceFn === DF_DOT_ADJ) {
+      const outlineCenter = /** @type {number[]} */ (values.outlineCenter);
+      const outlineScale = /** @type {number} */ (values.outlineScale);
       const adjB = [
-        (vecB[0] - values.outlineCenter[0]) * values.outlineScale,
-        (vecB[1] - values.outlineCenter[1]) * values.outlineScale,
+        (vecB[0] - outlineCenter[0]) * outlineScale,
+        (vecB[1] - outlineCenter[1]) * outlineScale,
       ];
       return dotDist(vecA, adjB);
     }
     throw new Error(`unknown distance function: ${distanceFn}`);
   }
 
-  getClosest(distanceFn, points, pos, renderValues) {
+  getClosest(
+    /** @type {DistanceFunctionName} */ distanceFn,
+    /** @type {number[][]} */ points,
+    /** @type {number[]} */ pos,
+    /** @type {ValuesObj} */ renderValues,
+  ) {
     const eps = 1e-5; // making sure imprecisions don't fuzz results
     return points.reduce(
       ([closestDist, closestIx], ref, ix) => {

@@ -4,7 +4,8 @@
     "noImplicitAny": true,
     "allowJs": true,
     "noEmit": true,
-    "lib": ["ES2023.Array", "ES2023", "DOM"]
+    "lib": ["ES2023.Array", "ES2023", "DOM", "DOM.Iterable"],
+    "downlevelIteration": true
   },
   "files": [
     "js/app.js",

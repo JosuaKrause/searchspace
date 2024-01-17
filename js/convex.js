@@ -71,7 +71,9 @@ export default class ConvexHull {
     if (points.length <= 2) {
       return points.map((p) => new Point(p));
     }
+    /** @type {Map<string, Point>} */
     const ps = new Map();
+    /** @type {Point | null} */
     let ref = null;
     points.forEach((pos) => {
       const point = new Point(pos);
@@ -93,7 +95,7 @@ export default class ConvexHull {
     });
   }
 
-  sortPolar(/** @type {Point[]} */ points, ref) {
+  sortPolar(/** @type {Point[]} */ points, /** @type {Point} */ ref) {
     return points.toSorted(
       (/** @type {Point} */ o1, /** @type {Point} */ o2) => {
         if (ref.isEmpty(o1)) return -1;

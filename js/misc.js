@@ -17,7 +17,43 @@
  */
 // @ts-check
 
-export function initPositionBuffer(gl, measures) {
+/**
+ * @typedef {{
+ *   width: number,
+ *   height: number,
+ *   maxX: number,
+ *   maxY: number,
+ *   unitX: number,
+ *   unitY: number,
+ *   sizeX: number,
+ *   sizeY: number,
+ *   blockX: number,
+ *   blockY: number,
+ * }} MeasuresObj
+ */
+/**
+ * @typedef {{
+ *   position?: WebGLBuffer,
+ * }} Buffers
+ */
+/**
+ * @typedef {{
+ *   program: WebGLProgram | null,
+ *   attribLocations: {
+ *     vertexPosition?: GLint,
+ *   },
+ *   uniformLocations: {
+ *     projectionMatrix?: WebGLUniformLocation,
+ *     modelViewMatrix?: WebGLUniformLocation,
+ *     [key: string]: WebGLUniformLocation,
+ *   },
+ * }} InfoObj
+ */
+
+export function initPositionBuffer(
+  /** @type {WebGL2RenderingContext} */ gl,
+  /** @type {MeasuresObj} */ measures,
+) {
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
   const positions = [
@@ -34,7 +70,11 @@ export function initPositionBuffer(gl, measures) {
   return positionBuffer;
 }
 
-export function setPositionAttribute(gl, buffers, programInfo) {
+export function setPositionAttribute(
+  /** @type {WebGL2RenderingContext} */ gl,
+  /** @type {Buffers} */ buffers,
+  /** @type {InfoObj} */ programInfo,
+) {
   const numComponents = 2;
   const type = gl.FLOAT;
   const normalize = false;
@@ -52,7 +92,10 @@ export function setPositionAttribute(gl, buffers, programInfo) {
   gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 }
 
-export function writeMessage(parentId, msg) {
+export function writeMessage(
+  /** @type {string} */ parentId,
+  /** @type {string | Error} */ msg,
+) {
   const elem = document.querySelector(parentId);
   `${msg}`.split(/[\r\n\0]+/).forEach((line) => {
     const lineStr = `${line}`.trim();
@@ -65,20 +108,31 @@ export function writeMessage(parentId, msg) {
   });
 }
 
-export async function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => {
-      resolve(image);
-    };
-    image.onerror = (e) => {
-      reject(e);
-    };
-    image.src = url;
-  });
+export async function loadImage(/** @type {string} */ url) {
+  return new Promise(
+    (
+      /** @type {(image: HTMLImageElement) => void} */ resolve,
+      /** @type {(e: string | Event) => void} */ reject,
+    ) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve(image);
+      };
+      image.onerror = (e) => {
+        reject(e);
+      };
+      image.src = url;
+    },
+  );
 }
 
-export function loadTexFile(gl, ix, locationTexture, locationSize, image) {
+export function loadTexFile(
+  /** @type {WebGL2RenderingContext} */ gl,
+  /** @type {number} */ ix,
+  /** @type {WebGLUniformLocation} */ locationTexture,
+  /** @type {WebGLUniformLocation} */ locationSize,
+  /** @type {HTMLImageElement} */ image,
+) {
   const texture = gl.createTexture();
   gl.activeTexture(gl.TEXTURE0 + ix);
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -92,12 +146,12 @@ export function loadTexFile(gl, ix, locationTexture, locationSize, image) {
 }
 
 export function loadAsTex(
-  gl,
-  ix,
-  locationTexture,
-  locationSize,
-  locationCount,
-  values,
+  /** @type {WebGL2RenderingContext} */ gl,
+  /** @type {number} */ ix,
+  /** @type {WebGLUniformLocation} */ locationTexture,
+  /** @type {WebGLUniformLocation} */ locationSize,
+  /** @type {WebGLUniformLocation} */ locationCount,
+  /** @type {number[][]} */ values,
 ) {
   const count = values.length;
   const size = Math.ceil(Math.sqrt(count));
@@ -105,7 +159,7 @@ export function loadAsTex(
   const data = new Float32Array(size * size * pixs);
   let pos = 0;
 
-  function writeData(v) {
+  function writeData(/** @type {number} */ v) {
     data[pos] = +v;
     pos += 1;
   }
@@ -139,11 +193,16 @@ export function loadAsTex(
   gl.uniform1i(locationCount, count);
 }
 
-export async function loadText(path) {
+export async function loadText(/** @type {string} */ path) {
   return (await fetch(path)).text();
 }
 
-export function convertMousePosition(canvas, measures, snap, e) {
+export function convertMousePosition(
+  /** @type {HTMLCanvasElement} */ canvas,
+  /** @type {MeasuresObj} */ measures,
+  /** @type {boolean} */ snap,
+  /** @type {{clientX: number, clientY: number}} */ e,
+) {
   const rect = canvas.getBoundingClientRect();
   const pixelX = ((e.clientX - rect.left) / rect.width) * measures.width;
   const pixelY = ((e.clientY - rect.top) / rect.height) * measures.height;
@@ -161,7 +220,12 @@ export function convertMousePosition(canvas, measures, snap, e) {
   return [orthoX, orthoY];
 }
 
-export function convertTouchPosition(canvas, measures, snap, e) {
+export function convertTouchPosition(
+  /** @type {HTMLCanvasElement} */ canvas,
+  /** @type {MeasuresObj} */ measures,
+  /** @type {boolean} */ snap,
+  /** @type {TouchEvent} */ e,
+) {
   const totalWeigth = [...e.touches].reduce((p, t) => p + t.force, 0);
   const hasWeigth = totalWeigth > 0;
   const [x, y] = [...e.touches].reduce(
@@ -177,7 +241,10 @@ export function convertTouchPosition(canvas, measures, snap, e) {
   });
 }
 
-export function download(saveURL, name) {
+export function download(
+  /** @type {string} */ saveURL,
+  /** @type {string} */ name,
+) {
   const link = document.createElement('a');
   link.download = name;
   link.href = saveURL;
@@ -186,6 +253,9 @@ export function download(saveURL, name) {
   // document.body.removeChild(link);
 }
 
-export function precision(val, digits) {
+export function precision(
+  /** @type {number} */ val,
+  /** @type {number} */ digits,
+) {
   return `${val >= 0 ? '\xA0' : ''}${val.toFixed(digits)}`;
 }
