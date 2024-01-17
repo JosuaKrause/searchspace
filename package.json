@@ -1,0 +1,36 @@
+{
+  "name": "searchspace",
+  "version": "1.0.0",
+  "description": "An interactive visualization for various similarity measures.",
+  "type": "module",
+  "main": "js/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JosuaKrause/searchspace.git"
+  },
+  "keywords": [
+    "k-nearest neighbors",
+    "dot product",
+    "cosine similarity",
+    "euclidean distance",
+    "manhattan distance",
+    "visualization"
+  ],
+  "author": "Josua Krause",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/JosuaKrause/searchspace/issues"
+  },
+  "homepage": "https://github.com/JosuaKrause/searchspace#readme",
+  "devDependencies": {
+    "eslint": "^8.52.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-html": "^7.1.0",
+    "typescript": "^5.3.3"
+  },
+  "private": true
+}

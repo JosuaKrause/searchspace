@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "allowJs": true,
+    "noEmit": true,
+    "lib": ["ES2023.Array", "ES2023", "DOM", "DOM.Iterable"],
+    "downlevelIteration": true
+  },
+  "files": [
+    "js/app.js",
+    "js/convex.js",
+    "js/misc.js",
+    "js/pixelcanvas.js",
+    "index.js",
+    "demo0.js",
+    "demo1.js",
+    "demo2.js"
+  ]
+}

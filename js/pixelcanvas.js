@@ -1,3 +1,22 @@
+/*
+ * Searchspace – An interactive visualization for various similarity measures.
+ * Copyright (C) 2024 Josua Krause
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+// @ts-check
+
 import {
   download,
   initPositionBuffer,
@@ -8,51 +27,111 @@ import {
   writeMessage,
 } from './misc.js';
 
+/** @typedef {number[]} Matrix4 */
+/**
+ * @typedef Mat4
+ * @prop {() => Matrix4} create
+ * @prop {(out: Matrix4, left: number, right: number, bottom: number, top: number, near: number, far: number) => Matrix4} ortho
+ * @prop {(out: Matrix4, a: Matrix4, v: number[]) => Matrix4} translate
+ */
+
+/** @type {Mat4} */
+// @ts-ignore Property 'mat4' does not exist on type 'Window & typeof globalThis'.
+var mat4 = window.mat4; /* eslint no-var: off */
+
+/** @typedef {import("./misc").MeasuresObj} MeasuresObj */
+/** @typedef {import("./misc").Buffers} Buffers */
+/** @typedef {import("./misc").InfoObj} InfoObj */
+/**
+ * @typedef {{
+ *   monitorValue?: string,
+ *   max?: number,
+ *   min?: number,
+ *   step?: number,
+ *   options?: ({ text: string, value: number })[],
+ * }} ValueInfo
+ */
+/** @typedef {'bool' | '2d' | 'enum' | 'range' | 'array2d' | 'float' | 'image'} ValueType */
+/** @typedef {'enum' | 'bool' | 'range'} ControlType */
+/** @typedef {boolean | number | number[] | number[][] | HTMLImageElement} ValueContent */
+/** @typedef {{ name: string, shaderName: string, type: ValueType }} ValueDefObj */
+/** @typedef {{ [key: string]: ValueContent }} ValuesObj */
+/** @typedef {'no_recording' | 'count_down' | 'is_recording'} RecordingState */
+
+/** @type {RecordingState} */
 const NO_RECORDING = 'no_recording';
+/** @type {RecordingState} */
 const COUNT_DOWN = 'count_down';
+/** @type {RecordingState} */
 const IS_RECORDING = 'is_recording';
 
 export default class PixelCanvas {
   constructor(
-    canvasId,
-    topbarId,
-    bottombarId,
-    errorId,
-    vertexShader,
-    fragmentShader,
-    width,
-    height,
-    initMaxY,
+    /** @type {string} */ canvasId,
+    /** @type {string} */ topbarId,
+    /** @type {string} */ bottombarId,
+    /** @type {string} */ errorId,
+    /** @type {string} */ vertexShader,
+    /** @type {string} */ fragmentShader,
+    /** @type {number} */ width,
+    /** @type {number} */ height,
+    /** @type {number} */ initMaxY,
   ) {
+    /** @type {number} */
     this.maxY = initMaxY;
+    /** @type {number} */
     this.width = width;
+    /** @type {number} */
     this.height = height;
+    /** @type {string} */
     this.vertexShader = vertexShader;
+    /** @type {string} */
     this.fragmentShader = fragmentShader;
+    /** @type {string} */
     this.canvasId = canvasId;
+    /** @type {string} */
     this.topbarId = topbarId;
+    /** @type {string} */
     this.bottombarId = bottombarId;
+    /** @type {string} */
     this.errorId = errorId;
+    /** @type {HTMLCanvasElement | null} */
     this.canvas = null;
+    /** @type {WebGL2RenderingContext | null} */
     this.gl = null;
+    /** @type {MeasuresObj | null} */
     this.measures = null;
+    /** @type {Buffers} */
     this.buffers = {};
+    /** @type {InfoObj} */
     this.programInfo = {
       program: null,
       attribLocations: {},
       uniformLocations: {},
     };
+    /** @type {ValuesObj} */
     this.values = {};
+    /** @type {ValueDefObj[]} */
     this.valueDefs = [];
+    /** @type { ((values: ValuesObj) => ValuesObj)[] } */
     this.prerender = [];
+    /** @type { ((values: ValuesObj) => void)[] } */
     this.postrender = [];
+    /** @type {RecordingState} */
     this.recordingState = NO_RECORDING;
+    /** @type {boolean} */
     this.isSetupBeforeCanvas = false;
+    /** @type {boolean} */
     this.isSetupAfterCanvas = false;
+    /** @type {boolean} */
     this.isDrawing = false;
+    /** @type {boolean} */
     this.hidden = false;
+    /** @type {boolean} */
     this.requestClear = false;
+    /** @type {boolean} */
     this.requestFullRepaint = false;
+    /** @type {boolean} */
     this.requestRepaint = false;
 
     window.addEventListener('error', (e) => {
@@ -87,7 +166,7 @@ export default class PixelCanvas {
     return this.hidden;
   }
 
-  setHidden(hidden) {
+  setHidden(/** @type {boolean} */ hidden) {
     if (this.hidden === hidden) {
       return;
     }
@@ -119,7 +198,7 @@ export default class PixelCanvas {
     };
   }
 
-  fullRepaint(cb) {
+  fullRepaint(/** @type {(() => void)?} */ cb) {
     if (this.isDrawing) {
       if (!this.requestFullRepaint) {
         requestAnimationFrame(() => {
@@ -134,7 +213,7 @@ export default class PixelCanvas {
     this.repaint(cb);
   }
 
-  repaint(cb) {
+  repaint(/** @type {(() => void)?} */ cb) {
     if (this.isHidden()) {
       return;
     }
@@ -151,7 +230,9 @@ export default class PixelCanvas {
 
     const draw = () => {
       this.drawScene();
-      cb && cb();
+      if (cb) {
+        cb();
+      }
     };
 
     const run = async () => {
@@ -172,8 +253,8 @@ export default class PixelCanvas {
           return;
         }
         const canvas = document.createElement('canvas');
-        canvas.setAttribute('width', this.width);
-        canvas.setAttribute('height', this.height);
+        canvas.setAttribute('width', `${this.width}`);
+        canvas.setAttribute('height', `${this.height}`);
         canvas.style.width = `${this.width}px`;
         canvas.style.height = `${this.height}px`;
         canvasDiv.appendChild(canvas);
@@ -201,7 +282,7 @@ export default class PixelCanvas {
     const finish = () => {
       this.isDrawing = false;
     };
-    const finishErr = (err) => {
+    const finishErr = (/** @type {Error} */ err) => {
       finish();
       console.error(err);
       this.writeError(err);
@@ -225,14 +306,27 @@ export default class PixelCanvas {
     }
   }
 
+  repaintWhenReady() {
+    const doRepaint = () => {
+      this.repaint();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', doRepaint);
+    } else {
+      doRepaint();
+    }
+  }
+
   getValues() {
     return this.values;
   }
 
   computeMeasures() {
     const gl = this.getGL();
-    const width = gl.canvas.clientWidth;
-    const height = gl.canvas.clientHeight;
+    const canvas = /** @type {HTMLCanvasElement} */ (gl.canvas);
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
     const maxY = this.maxY;
     const superSampling = 4.0;
     const unitY = (maxY * 2.0) / height / superSampling;
@@ -282,14 +376,22 @@ export default class PixelCanvas {
     return this.gl;
   }
 
-  addValue(name, shaderName, type, initialValue) {
+  addValue(
+    /** @type {string} */ name,
+    /** @type {string} */ shaderName,
+    /** @type {ValueType} */ type,
+    /** @type {ValueContent} */ initialValue,
+  ) {
     this.valueDefs.push({ name, shaderName, type });
     this.values[name] = initialValue;
   }
 
-  getValueType(name) {
+  getValueType(/** @type {string} */ name) {
     const vtype = this.valueDefs.reduce(
-      (res, { name: cur, type }) => (cur === name ? type : res),
+      (
+        /** @type {ValueType | null} */ res,
+        /** @type {ValueDefObj} */ { name: cur, type },
+      ) => (cur === name ? type : res),
       null,
     );
     if (vtype === null) {
@@ -298,7 +400,14 @@ export default class PixelCanvas {
     return vtype;
   }
 
-  addGenericControl(fullName, prettyName, type, initValue, setValue, info) {
+  addGenericControl(
+    /** @type {string} */ fullName,
+    /** @type {string} */ prettyName,
+    /** @type {ControlType} */ type,
+    /** @type {ValueContent} */ initValue,
+    /** @type {(value: ValueContent) => void} */ setValue,
+    /** @type {ValueInfo} */ info,
+  ) {
     const label = document.createElement('label');
     label.setAttribute('for', fullName);
     label.textContent = prettyName;
@@ -309,63 +418,68 @@ export default class PixelCanvas {
     }[type];
     if (!elemType) {
       throw new Error(
-        `unsupported type ${type} for ${fullName} (${shaderName})`,
+        `unsupported type ${type} for ${fullName} (${prettyName})`,
       );
     }
-    const elem = document.createElement(elemType);
-    elem.classList.add(type);
-    elem.setAttribute('id', fullName);
-    elem.setAttribute('name', fullName);
+    const gElem = /** @type {HTMLInputElement | HTMLSelectElement} */ (
+      document.createElement(elemType)
+    );
+    gElem.classList.add(type);
+    gElem.setAttribute('id', fullName);
+    gElem.setAttribute('name', fullName);
     const div = document.createElement('div');
     div.appendChild(label);
     if (type === 'enum') {
+      const elem = /** @type {HTMLSelectElement} */ (gElem);
       info.options.forEach(({ value, text }) => {
         const option = document.createElement('option');
-        option.setAttribute('value', value);
+        option.setAttribute('value', `${value}`);
         option.textContent = text;
         elem.appendChild(option);
       });
-      elem.value = initValue;
+      elem.value = `${initValue}`;
       elem.addEventListener('change', () => {
         const newValue = +elem.value;
         setValue(newValue);
       });
       if (info.monitorValue) {
         this.addPostrenderHook((values) => {
-          elem.value = values[info.monitorValue];
+          elem.value = `${values[info.monitorValue]}`;
         });
       }
     } else if (type === 'bool') {
+      const elem = /** @type {HTMLInputElement} */ (gElem);
       elem.setAttribute('type', 'checkbox');
-      elem.checked = initValue;
+      elem.checked = /** @type {boolean} */ (initValue);
       elem.addEventListener('change', () => {
         setValue(elem.checked);
       });
       if (info.monitorValue) {
         this.addPostrenderHook((values) => {
-          elem.checked = values[info.monitorValue];
+          elem.checked = /** @type {boolean} */ (values[info.monitorValue]);
         });
       }
     } else if (type === 'range') {
+      const elem = /** @type {HTMLInputElement} */ (gElem);
       const maxValue = info['max'];
       const minValue = info['min'];
       const step = info['step'] || 1;
       elem.setAttribute('type', 'range');
-      elem.setAttribute('min', minValue);
-      elem.setAttribute('max', maxValue);
-      elem.setAttribute('step', step);
+      elem.setAttribute('min', `${minValue}`);
+      elem.setAttribute('max', `${maxValue}`);
+      elem.setAttribute('step', `${step}`);
       const edit = document.createElement('input');
       edit.setAttribute('id', `${fullName}-edit`);
       edit.setAttribute('name', `${fullName}-edit`);
       edit.setAttribute('type', 'text');
       edit.classList.add('rangeedit');
-      edit.value = initValue;
-      elem.value = initValue;
+      edit.value = `${initValue}`;
+      elem.value = `${initValue}`;
       edit.addEventListener('change', () => {
         const evalue = +edit.value;
         if (Number.isFinite(evalue)) {
           setValue(evalue);
-          elem.value = evalue;
+          elem.value = `${evalue}`;
           edit.classList.remove('invalid');
         } else {
           edit.classList.add('invalid');
@@ -376,24 +490,27 @@ export default class PixelCanvas {
         const rvalue = +elem.value;
         if (evalue !== rvalue) {
           setValue(rvalue);
-          edit.value = rvalue;
+          edit.value = `${rvalue}`;
           edit.classList.remove('invalid');
         }
       });
       div.appendChild(edit);
       if (info.monitorValue) {
         this.addPostrenderHook((values) => {
-          edit.value = values[info.monitorValue];
-          elem.value = values[info.monitorValue];
+          edit.value = `${values[info.monitorValue]}`;
+          elem.value = `${values[info.monitorValue]}`;
         });
       }
     } else {
       throw new Error(
-        `unsupported type ${type} for ${fullName} (${shaderName})`,
+        `unsupported type ${type} for ${fullName} (${prettyName})`,
       );
     }
-    div.appendChild(elem);
+    div.appendChild(gElem);
     const topbar = document.querySelector(this.topbarId);
+    if (!topbar) {
+      throw new Error(`Could not find ${this.topbarId}`);
+    }
     topbar.appendChild(div);
   }
 
@@ -401,38 +518,51 @@ export default class PixelCanvas {
     const div = document.createElement('div');
     div.classList.add('divider');
     const topbar = document.querySelector(this.topbarId);
+    if (!topbar) {
+      throw new Error(`Could not find ${this.topbarId}`);
+    }
     topbar.appendChild(div);
   }
 
-  addViewportControl(prettyName, info) {
+  addViewportControl(
+    /** @type {string} */ prettyName,
+    /** @type {ValueInfo} */ info,
+  ) {
     this.addGenericControl(
       'maxY',
       prettyName,
       'range',
       this.maxY,
       (value) => {
-        this.maxY = value;
+        this.maxY = /** @type {number} */ (value);
         this.fullRepaint();
       },
       info,
     );
   }
 
-  addControl(name, prettyName, info) {
+  addControl(
+    /** @type {string} */ name,
+    /** @type {string} */ prettyName,
+    /** @type {ValueInfo} */ info,
+  ) {
     const curValue = this.getValues()[name];
     const type = this.getValueType(name);
     const fullName = `value_${name}`;
     this.addGenericControl(
       fullName,
       prettyName,
-      type,
+      /** @type {ControlType} */ (type),
       curValue,
       (value) => this.updateValue({ [name]: value }),
       info,
     );
   }
 
-  async loadShader(type, path) {
+  async loadShader(
+    /** @type {typeof gl.VERTEX_SHADER | typeof gl.FRAGMENT_SHADER} */ type,
+    /** @type {string} */ path,
+  ) {
     const gl = this.getGL();
     const shader = gl.createShader(type);
     gl.shaderSource(shader, await loadText(path));
@@ -446,7 +576,10 @@ export default class PixelCanvas {
     return shader;
   }
 
-  async initShaderProgram(pathVert, pathFrag) {
+  async initShaderProgram(
+    /** @type {string} */ pathVert,
+    /** @type {string} */ pathFrag,
+  ) {
     const gl = this.getGL();
     const [vertexShader, fragmentShader] = await Promise.all([
       this.loadShader(gl.VERTEX_SHADER, pathVert),
@@ -552,22 +685,22 @@ export default class PixelCanvas {
     });
   }
 
-  updateValue(obj) {
+  updateValue(/** @type {{ [key: string]: ValueContent }} */ obj) {
     const values = this.getValues();
     Object.keys(obj).forEach((key) => {
       if (values[key] === undefined) {
-        writeError(`unknown value key: ${key}`);
+        this.writeError(`unknown value key: ${key}`);
       }
       values[key] = obj[key];
     });
     this.repaint();
   }
 
-  addPrerenderHook(cb) {
+  addPrerenderHook(/** @type {(values: ValuesObj) => ValuesObj} */ cb) {
     this.prerender.push(cb);
   }
 
-  addPostrenderHook(cb) {
+  addPostrenderHook(/** @type {(values: ValuesObj) => void} */ cb) {
     this.postrender.push(cb);
   }
 
@@ -621,11 +754,11 @@ export default class PixelCanvas {
     let texIx = 0;
     valueDefs.forEach(({ name, type }) => {
       if (type === '2d') {
-        gl.uniform2fv(pul[name], values[name]);
+        gl.uniform2fv(pul[name], /** @type {number[]} */ (values[name]));
       } else if (['float', 'range'].includes(type)) {
-        gl.uniform1f(pul[name], values[name]);
+        gl.uniform1f(pul[name], /** @type {number} */ (values[name]));
       } else if (['int', 'bool', 'enum'].includes(type)) {
-        gl.uniform1i(pul[name], values[name]);
+        gl.uniform1i(pul[name], /** @type {number} */ (values[name]));
       } else if (type === 'array2d') {
         loadAsTex(
           gl,
@@ -633,7 +766,7 @@ export default class PixelCanvas {
           pul[`${name}Tex`],
           pul[`${name}Size`],
           pul[`${name}Count`],
-          values[name],
+          /** @type {number[][]} */ (values[name]),
         );
         texIx += 1;
       } else if (type === 'image') {
@@ -642,13 +775,11 @@ export default class PixelCanvas {
           texIx,
           pul[`${name}Tex`],
           pul[`${name}Size`],
-          values[name],
+          /** @type {HTMLImageElement} */ (values[name]),
         );
         texIx += 1;
       } else {
-        this.writeError(
-          `unsupported type ${type} for ${name} (${shaderName})`,
-        );
+        this.writeError(`unsupported type ${type} for ${name}`);
       }
     });
 
@@ -661,7 +792,7 @@ export default class PixelCanvas {
     this.postrender.forEach((cb) => cb(values));
   }
 
-  addStatus(cb) {
+  addStatus(/** @type {(values: ValuesObj) => string} */ cb) {
     const status = document.createElement('div');
     status.classList.add('refstatus');
     this.addPostrenderHook((values) => {
@@ -672,7 +803,11 @@ export default class PixelCanvas {
     bottombar.appendChild(status);
   }
 
-  addButton(text, key, cb) {
+  addButton(
+    /** @type {string} */ text,
+    /** @type {string} */ key,
+    /** @type {() => void} */ cb,
+  ) {
     const btn = document.createElement('input');
     btn.setAttribute('type', 'button');
     btn.value = key ? `${text} (${key})` : text;
@@ -682,7 +817,7 @@ export default class PixelCanvas {
     return btn;
   }
 
-  addCapture(text, key) {
+  addCapture(/** @type {string} */ text, /** @type {string} */ key) {
     this.addButton(text, key, () => {
       this.repaint(() => {
         const canvas = this.getCanvas();
@@ -692,7 +827,12 @@ export default class PixelCanvas {
     });
   }
 
-  addVideoCapture(startText, stopText, startKey, stopKey) {
+  addVideoCapture(
+    /** @type {string} */ startText,
+    /** @type {string} */ stopText,
+    /** @type {string} */ startKey,
+    /** @type {string} */ stopKey,
+  ) {
     const btn = document.createElement('input');
     btn.setAttribute('type', 'button');
     const btnTextInit = `${startText} (${startKey})`;
@@ -707,7 +847,10 @@ export default class PixelCanvas {
     this.recordingState = NO_RECORDING;
     const that = this;
 
-    function countDown(num, cb) {
+    function countDown(
+      /** @type {number} */ num,
+      /** @type {() => void} */ cb,
+    ) {
       that.recordingState = COUNT_DOWN;
       if (num <= 0) {
         videoOverlay.textContent = '';
@@ -720,8 +863,11 @@ export default class PixelCanvas {
       }, 1000);
     }
 
+    /** @type {MediaStream | null} */
     let videoStream = null;
+    /** @type {MediaRecorder | null} */
     let mediaRecorder = null;
+    /** @type {BlobPart[]} */
     let chunks = [];
 
     function startRecording() {
@@ -787,14 +933,18 @@ export default class PixelCanvas {
     return this.recordingState === IS_RECORDING;
   }
 
-  addClickEventListener(btn, key, cb) {
+  addClickEventListener(
+    /** @type {HTMLInputElement} */ btn,
+    /** @type {string} */ key,
+    /** @type {() => void} */ cb,
+  ) {
     btn.addEventListener('click', () => {
       cb();
     });
     this.addKeyEventListener(key, cb);
   }
 
-  isTextTarget(target) {
+  isTextTarget(/** @type {HTMLElement} */ target) {
     if (!target) {
       return false;
     }
@@ -807,7 +957,10 @@ export default class PixelCanvas {
     return true;
   }
 
-  addKeyEventListener(key, cb) {
+  addKeyEventListener(
+    /** @type {string} */ key,
+    /** @type {() => void} */ cb,
+  ) {
     if (!key) {
       return;
     }
@@ -816,13 +969,14 @@ export default class PixelCanvas {
       if (e.defaultPrevented) {
         return;
       }
-      if (this.isTextTarget(e.target)) {
+      const target = /** @type {HTMLElement | null} */ (e.target);
+      if (this.isTextTarget(target)) {
         return;
       }
       if (e.key.toLowerCase() === lowerKey) {
         cb();
-        if (e.target) {
-          e.target.blur();
+        if (target && target.blur) {
+          target.blur();
         }
         e.preventDefault();
       }
@@ -835,7 +989,7 @@ export default class PixelCanvas {
     });
   }
 
-  writeError(msg) {
+  writeError(/** @type {string | Error} */ msg) {
     writeMessage(this.errorId, msg);
   }
 } // PixelCanvas

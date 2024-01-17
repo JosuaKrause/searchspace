@@ -58,8 +58,8 @@
     ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
+      function gtag(...args) {
+        window.dataLayer.push(args);
       }
       gtag('js', new Date());
 
@@ -67,6 +67,7 @@
     </script>
     <!-- Google tag end -->
     <script src="./lib/gl-matrix-min.js" defer></script>
+    <script async src="demo1.js" type="module"></script>
   </head>
   <body>
     <div class="hmain">
@@ -81,24 +82,11 @@
     <div id="error"></div>
     <footer>
       <div class="footer-style">
-        © jk 2023
+        © jk 2024
         <a href="https://github.com/JosuaKrause/searchspace" target="_blank">
           [source]
         </a>
       </div>
     </footer>
   </body>
-  <script type="module" defer>
-    import App, { DF_COS, DF_L2_PROJ } from './js/app.js';
-
-    new App('#main', '#header', '#footer', '#topbar', '#bottombar', '#error', {
-      title: 'Cosine Similarity Function',
-      unitCircle: true,
-      allowUnitCircle: true,
-      convexHull: false,
-      allowConvexHull: false,
-      distanceFn: DF_COS,
-      metrics: [DF_COS, DF_L2_PROJ],
-    }).repaint();
-  </script>
 </html>
