@@ -25,8 +25,11 @@ import {
   precision,
 } from './misc.js';
 import PixelCanvas from './pixelcanvas.js';
+import { buildSearch, parseState } from './urlstate.js';
 
 /** @typedef {import('./pixelcanvas.js').ValuesObj} ValuesObj */
+/** @typedef {import('./urlstate.js').SharedState} SharedState */
+/** @typedef {import('./urlstate.js').StateLimits} StateLimits */
 /** @typedef {'L1' | 'L2' | 'Cos' | 'Dot' | 'Unit L2' | 'Adj. Dot'} DistanceFunctionName */
 /**
  * @typedef {{
@@ -56,6 +59,11 @@ import PixelCanvas from './pixelcanvas.js';
  */
 
 const MAX_POINTS = 36;
+const DEFAULT_CORRECTION = 2.5;
+const CORRECTION_RANGE = { min: 0.01, max: 10.0 };
+const VIEW_RANGE = { min: 1.0, max: 10.0 };
+/** Minimum time between URL updates. Browsers throttle `replaceState`. */
+const URL_WRITE_DELAY = 500;
 
 /** @type {DistanceFunctionName} */ export const DF_L1 = 'L1';
 /** @type {DistanceFunctionName} */ export const DF_L2 = 'L2';
@@ -113,6 +121,60 @@ export default class App extends PixelCanvas {
       initRefPos: [0.01, 0.01],
       ...settings,
     };
+    /**
+     * The cursor position written to the URL. Unlike `refPosition` it only
+     * changes on a click, not on every mouse move.
+     * @type {number[]}
+     */
+    this.sharedRefPos = this.settings.initRefPos;
+  }
+
+  /** @return {SharedState} */
+  getSharedState() {
+    const values = this.getValues();
+    return {
+      metric: DFS[/** @type {number} */ (values.distanceFn)],
+      points: /** @type {number[][]} */ (values.points),
+      unitCircle: /** @type {boolean} */ (values.unitCircle),
+      convexHull: /** @type {boolean} */ (values.convexHull),
+      correction: /** @type {number} */ (values.correction),
+      view: this.maxY,
+      showGrid: /** @type {boolean} */ (values.showGrid),
+      refPos: this.sharedRefPos,
+    };
+  }
+
+  addUrlState(
+    /** @type {SharedState} */ defaults,
+    /** @type {StateLimits} */ limits,
+  ) {
+    const writeUrl = () => {
+      const { pathname, search, hash } = window.location;
+      const newSearch = buildSearch(
+        search,
+        this.getSharedState(),
+        defaults,
+        limits,
+      );
+      if (newSearch !== search) {
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${pathname}${newSearch}${hash}`,
+        );
+      }
+    };
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    let timer = null;
+    this.addPostrenderHook(() => {
+      if (timer !== null) {
+        return;
+      }
+      timer = setTimeout(() => {
+        timer = null;
+        writeUrl();
+      }, URL_WRITE_DELAY);
+    });
   }
 
   addHeaderAndFooter(
@@ -164,20 +226,46 @@ export default class App extends PixelCanvas {
   async setupBeforeCanvas() {
     const urlParams = new URLSearchParams(window.location.search);
     const settings = this.settings;
-    const distanceFn = DFS.indexOf(settings.distanceFn);
     const dfs = settings.metrics;
+
+    /** @type {SharedState} */
+    const defaults = {
+      metric: settings.distanceFn,
+      points: settings.points,
+      unitCircle: settings.unitCircle,
+      convexHull: settings.convexHull,
+      correction: DEFAULT_CORRECTION,
+      view: this.maxY,
+      showGrid: false,
+      refPos: settings.initRefPos,
+    };
+    /** @type {StateLimits} */
+    const limits = {
+      metrics: dfs,
+      allowUnitCircle: settings.allowUnitCircle,
+      allowConvexHull: settings.allowConvexHull,
+      maxPoints: MAX_POINTS,
+      correction: CORRECTION_RANGE,
+      view: VIEW_RANGE,
+    };
+    const initial = parseState(window.location.search, defaults, limits);
+    const distanceFn = DFS.indexOf(
+      /** @type {DistanceFunctionName} */ (initial.metric),
+    );
+    this.maxY = initial.view;
+    this.sharedRefPos = initial.refPos;
 
     this.addHeaderAndFooter(settings, urlParams);
 
     this.addValue('areaMode', 'uAreaMode', 'bool', false);
-    this.addValue('showGrid', 'uShowGrid', 'bool', false);
+    this.addValue('showGrid', 'uShowGrid', 'bool', initial.showGrid);
     this.addValue('showCursor', 'uShowCursor', 'bool', false);
-    this.addValue('unitCircle', 'uUnitCircle', 'bool', settings.unitCircle);
-    this.addValue('convexHull', 'uConvexHull', 'bool', settings.convexHull);
-    this.addValue('refPosition', 'uRefPosition', '2d', settings.initRefPos);
+    this.addValue('unitCircle', 'uUnitCircle', 'bool', initial.unitCircle);
+    this.addValue('convexHull', 'uConvexHull', 'bool', initial.convexHull);
+    this.addValue('refPosition', 'uRefPosition', '2d', initial.refPos);
     this.addValue('distanceFn', 'uDistanceFn', 'enum', distanceFn);
-    this.addValue('correction', 'uCorrection', 'range', 2.5);
-    this.addValue('points', 'uPoints', 'array2d', settings.points);
+    this.addValue('correction', 'uCorrection', 'range', initial.correction);
+    this.addValue('points', 'uPoints', 'array2d', initial.points);
     this.addValue('outline', 'uOutline', 'array2d', []);
     this.addValue('outlineCenter', 'uOutlineCenter', '2d', [0, 0]);
     this.addValue('outlineScale', 'uOutlineScale', 'float', 1);
@@ -258,13 +346,11 @@ export default class App extends PixelCanvas {
     }
     this.addTopDivider();
     this.addControl('correction', 'Correction:', {
-      min: 0.01,
-      max: 10.0,
+      ...CORRECTION_RANGE,
       step: 0.01,
     });
     this.addViewportControl('View:', {
-      min: 1.0,
-      max: 10.0,
+      ...VIEW_RANGE,
       step: 0.1,
     });
     this.addControl('showGrid', 'Grid:', {});
@@ -295,6 +381,7 @@ export default class App extends PixelCanvas {
     });
 
     this.addVisibilityCheck();
+    this.addUrlState(defaults, limits);
 
     await super.setupBeforeCanvas();
   }
@@ -349,6 +436,7 @@ export default class App extends PixelCanvas {
       } else if (points.length < MAX_POINTS) {
         points.push(refPosition);
       }
+      this.sharedRefPos = refPosition;
       this.updateValue({
         points,
         refPosition,
