@@ -19,6 +19,7 @@
 
 import {
   download,
+  getElement,
   initPositionBuffer,
   loadAsTex,
   loadTexFile,
@@ -282,7 +283,7 @@ export default class PixelCanvas {
     const finish = () => {
       this.isDrawing = false;
     };
-    const finishErr = (/** @type {Error} */ err) => {
+    const finishErr = (/** @type {unknown} */ err) => {
       finish();
       console.error(err);
       this.writeError(err);
@@ -427,10 +428,14 @@ export default class PixelCanvas {
     gElem.classList.add(type);
     gElem.setAttribute('id', fullName);
     gElem.setAttribute('name', fullName);
+    const monitorValue = info.monitorValue;
     const div = document.createElement('div');
     div.appendChild(label);
     if (type === 'enum') {
       const elem = /** @type {HTMLSelectElement} */ (gElem);
+      if (!info.options) {
+        throw new Error(`missing options for ${fullName} (${prettyName})`);
+      }
       info.options.forEach(({ value, text }) => {
         const option = document.createElement('option');
         option.setAttribute('value', `${value}`);
@@ -442,9 +447,9 @@ export default class PixelCanvas {
         const newValue = +elem.value;
         setValue(newValue);
       });
-      if (info.monitorValue) {
+      if (monitorValue) {
         this.addPostrenderHook((values) => {
-          elem.value = `${values[info.monitorValue]}`;
+          elem.value = `${values[monitorValue]}`;
         });
       }
     } else if (type === 'bool') {
@@ -454,9 +459,9 @@ export default class PixelCanvas {
       elem.addEventListener('change', () => {
         setValue(elem.checked);
       });
-      if (info.monitorValue) {
+      if (monitorValue) {
         this.addPostrenderHook((values) => {
-          elem.checked = /** @type {boolean} */ (values[info.monitorValue]);
+          elem.checked = /** @type {boolean} */ (values[monitorValue]);
         });
       }
     } else if (type === 'range') {
@@ -495,10 +500,10 @@ export default class PixelCanvas {
         }
       });
       div.appendChild(edit);
-      if (info.monitorValue) {
+      if (monitorValue) {
         this.addPostrenderHook((values) => {
-          edit.value = `${values[info.monitorValue]}`;
-          elem.value = `${values[info.monitorValue]}`;
+          edit.value = `${values[monitorValue]}`;
+          elem.value = `${values[monitorValue]}`;
         });
       }
     } else {
@@ -507,21 +512,13 @@ export default class PixelCanvas {
       );
     }
     div.appendChild(gElem);
-    const topbar = document.querySelector(this.topbarId);
-    if (!topbar) {
-      throw new Error(`Could not find ${this.topbarId}`);
-    }
-    topbar.appendChild(div);
+    getElement(this.topbarId).appendChild(div);
   }
 
   addTopDivider() {
     const div = document.createElement('div');
     div.classList.add('divider');
-    const topbar = document.querySelector(this.topbarId);
-    if (!topbar) {
-      throw new Error(`Could not find ${this.topbarId}`);
-    }
-    topbar.appendChild(div);
+    getElement(this.topbarId).appendChild(div);
   }
 
   addViewportControl(
@@ -559,12 +556,13 @@ export default class PixelCanvas {
     );
   }
 
-  async loadShader(
-    /** @type {typeof gl.VERTEX_SHADER | typeof gl.FRAGMENT_SHADER} */ type,
-    /** @type {string} */ path,
-  ) {
+  async loadShader(/** @type {number} */ type, /** @type {string} */ path) {
     const gl = this.getGL();
     const shader = gl.createShader(type);
+    if (!shader) {
+      this.writeError('Unable to create a shader.');
+      return null;
+    }
     gl.shaderSource(shader, await loadText(path));
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -585,8 +583,12 @@ export default class PixelCanvas {
       this.loadShader(gl.VERTEX_SHADER, pathVert),
       this.loadShader(gl.FRAGMENT_SHADER, pathFrag),
     ]);
-    const shaderProgram = gl.createProgram();
     if (vertexShader === null || fragmentShader === null) {
+      return null;
+    }
+    const shaderProgram = gl.createProgram();
+    if (!shaderProgram) {
+      this.writeError('Unable to create the shader program.');
       return null;
     }
     gl.attachShader(shaderProgram, vertexShader);
@@ -634,6 +636,9 @@ export default class PixelCanvas {
       attribLocations,
       uniformLocations,
     } = this.programInfo;
+    if (!shaderProgram) {
+      throw new Error('shader program is not initialized');
+    }
 
     attribLocations.vertexPosition = gl.getAttribLocation(
       shaderProgram,
@@ -797,10 +802,8 @@ export default class PixelCanvas {
     status.classList.add('refstatus');
     this.addPostrenderHook((values) => {
       status.textContent = cb(values);
-      return values;
     });
-    const bottombar = document.querySelector(this.bottombarId);
-    bottombar.appendChild(status);
+    getElement(this.bottombarId).appendChild(status);
   }
 
   addButton(
@@ -812,8 +815,7 @@ export default class PixelCanvas {
     btn.setAttribute('type', 'button');
     btn.value = key ? `${text} (${key})` : text;
     this.addClickEventListener(btn, key, cb);
-    const bottombar = document.querySelector(this.bottombarId);
-    bottombar.appendChild(btn);
+    getElement(this.bottombarId).appendChild(btn);
     return btn;
   }
 
@@ -837,7 +839,7 @@ export default class PixelCanvas {
     btn.setAttribute('type', 'button');
     const btnTextInit = `${startText} (${startKey})`;
     btn.value = btnTextInit;
-    const canvasDiv = document.querySelector(this.canvasId);
+    const canvasDiv = getElement(this.canvasId);
     const videoOverlay = document.createElement('div');
     videoOverlay.style.width = `${this.width}px`;
     videoOverlay.style.height = `${this.height}px`;
@@ -845,13 +847,12 @@ export default class PixelCanvas {
     videoOverlay.classList.add('videocounter');
     canvasDiv.appendChild(videoOverlay);
     this.recordingState = NO_RECORDING;
-    const that = this;
 
-    function countDown(
+    const countDown = (
       /** @type {number} */ num,
       /** @type {() => void} */ cb,
-    ) {
-      that.recordingState = COUNT_DOWN;
+    ) => {
+      this.recordingState = COUNT_DOWN;
       if (num <= 0) {
         videoOverlay.textContent = '';
         cb();
@@ -861,7 +862,7 @@ export default class PixelCanvas {
       setTimeout(() => {
         countDown(num - 1, cb);
       }, 1000);
-    }
+    };
 
     /** @type {MediaStream | null} */
     let videoStream = null;
@@ -870,11 +871,11 @@ export default class PixelCanvas {
     /** @type {BlobPart[]} */
     let chunks = [];
 
-    function startRecording() {
+    const startRecording = () => {
       btn.value = `${stopText} (${stopKey})`;
-      that.recordingState = IS_RECORDING;
+      this.recordingState = IS_RECORDING;
 
-      const canvas = that.getCanvas();
+      const canvas = this.getCanvas();
       videoStream = canvas.captureStream(60);
       mediaRecorder = new MediaRecorder(videoStream);
 
@@ -882,7 +883,7 @@ export default class PixelCanvas {
       mediaRecorder.ondataavailable = (e) => {
         chunks.push(e.data);
       };
-      mediaRecorder.onstop = (e) => {
+      mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'video/webm' });
         chunks = [];
         const videoURL = URL.createObjectURL(blob);
@@ -890,23 +891,24 @@ export default class PixelCanvas {
       };
 
       mediaRecorder.start();
-      that.repaint();
-    }
+      this.repaint();
+    };
 
-    function stopRecording() {
+    const stopRecording = () => {
       btn.value = btnTextInit;
-      that.recordingState = NO_RECORDING;
+      this.recordingState = NO_RECORDING;
 
-      if (!mediaRecorder) {
+      const recorder = mediaRecorder;
+      if (!recorder) {
         return;
       }
-      that.repaint(() => {
-        mediaRecorder.stop();
+      this.repaint(() => {
+        recorder.stop();
         videoStream = null;
         mediaRecorder = null;
         chunks = [];
       });
-    }
+    };
 
     this.addKeyEventListener(startKey, () => {
       if (this.recordingState === NO_RECORDING) {
@@ -925,8 +927,7 @@ export default class PixelCanvas {
         countDown(3, startRecording);
       }
     });
-    const bottombar = document.querySelector(this.bottombarId);
-    bottombar.appendChild(btn);
+    getElement(this.bottombarId).appendChild(btn);
   }
 
   isRecording() {
@@ -944,7 +945,7 @@ export default class PixelCanvas {
     this.addKeyEventListener(key, cb);
   }
 
-  isTextTarget(/** @type {HTMLElement} */ target) {
+  isTextTarget(/** @type {HTMLElement | null} */ target) {
     if (!target) {
       return false;
     }
@@ -989,7 +990,7 @@ export default class PixelCanvas {
     });
   }
 
-  writeError(/** @type {string | Error} */ msg) {
+  writeError(/** @type {unknown} */ msg) {
     writeMessage(this.errorId, msg);
   }
 } // PixelCanvas

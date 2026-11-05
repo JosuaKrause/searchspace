@@ -75,7 +75,7 @@ export default class ConvexHull {
     const ps = new Map();
     /** @type {Point | null} */
     let ref = null;
-    points.forEach((pos) => {
+    for (const pos of points) {
       const point = new Point(pos);
       ps.set(point.asKey(), point);
       if (
@@ -85,7 +85,10 @@ export default class ConvexHull {
       ) {
         ref = point;
       }
-    });
+    }
+    if (ref === null) {
+      return [];
+    }
     return this.grahamScan(this.sortPolar([...ps.values()], ref));
   }
 

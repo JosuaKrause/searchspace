@@ -33,7 +33,7 @@
  */
 /**
  * @typedef {{
- *   position?: WebGLBuffer,
+ *   position?: WebGLBuffer | null,
  * }} Buffers
  */
 /**
@@ -43,12 +43,18 @@
  *     vertexPosition?: GLint,
  *   },
  *   uniformLocations: {
- *     projectionMatrix?: WebGLUniformLocation,
- *     modelViewMatrix?: WebGLUniformLocation,
- *     [key: string]: WebGLUniformLocation,
+ *     [key: string]: WebGLUniformLocation | null,
  *   },
  * }} InfoObj
  */
+
+export function getElement(/** @type {string} */ selector) {
+  const elem = document.querySelector(selector);
+  if (!elem) {
+    throw new Error(`Could not find ${selector}`);
+  }
+  return elem;
+}
 
 export function initPositionBuffer(
   /** @type {WebGL2RenderingContext} */ gl,
@@ -80,23 +86,31 @@ export function setPositionAttribute(
   const normalize = false;
   const stride = 0;
   const offset = 0;
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+  const vertexPosition = programInfo.attribLocations.vertexPosition;
+  if (vertexPosition === undefined) {
+    throw new Error('vertex position is not initialized');
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position ?? null);
   gl.vertexAttribPointer(
-    programInfo.attribLocations.vertexPosition,
+    vertexPosition,
     numComponents,
     type,
     normalize,
     stride,
     offset,
   );
-  gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+  gl.enableVertexAttribArray(vertexPosition);
 }
 
 export function writeMessage(
   /** @type {string} */ parentId,
-  /** @type {string | Error} */ msg,
+  /** @type {unknown} */ msg,
 ) {
   const elem = document.querySelector(parentId);
+  if (!elem) {
+    console.error(msg);
+    return;
+  }
   `${msg}`.split(/[\r\n\0]+/).forEach((line) => {
     const lineStr = `${line}`.trim();
     if (!lineStr) {
@@ -129,8 +143,8 @@ export async function loadImage(/** @type {string} */ url) {
 export function loadTexFile(
   /** @type {WebGL2RenderingContext} */ gl,
   /** @type {number} */ ix,
-  /** @type {WebGLUniformLocation} */ locationTexture,
-  /** @type {WebGLUniformLocation} */ locationSize,
+  /** @type {WebGLUniformLocation | null} */ locationTexture,
+  /** @type {WebGLUniformLocation | null} */ locationSize,
   /** @type {HTMLImageElement} */ image,
 ) {
   const texture = gl.createTexture();
@@ -148,9 +162,9 @@ export function loadTexFile(
 export function loadAsTex(
   /** @type {WebGL2RenderingContext} */ gl,
   /** @type {number} */ ix,
-  /** @type {WebGLUniformLocation} */ locationTexture,
-  /** @type {WebGLUniformLocation} */ locationSize,
-  /** @type {WebGLUniformLocation} */ locationCount,
+  /** @type {WebGLUniformLocation | null} */ locationTexture,
+  /** @type {WebGLUniformLocation | null} */ locationSize,
+  /** @type {WebGLUniformLocation | null} */ locationCount,
   /** @type {number[][]} */ values,
 ) {
   const count = values.length;
@@ -226,18 +240,18 @@ export function convertTouchPosition(
   /** @type {boolean} */ snap,
   /** @type {TouchEvent} */ e,
 ) {
-  const totalWeigth = [...e.touches].reduce((p, t) => p + t.force, 0);
-  const hasWeigth = totalWeigth > 0;
+  const totalWeight = [...e.touches].reduce((p, t) => p + t.force, 0);
+  const hasWeight = totalWeight > 0;
   const [x, y] = [...e.touches].reduce(
     (p, t) => {
-      const weight = hasWeigth ? t.force : 1;
+      const weight = hasWeight ? t.force : 1;
       return [p[0] + t.clientX * weight, p[1] + t.clientY * weight];
     },
     [0, 0],
   );
   return convertMousePosition(canvas, measures, snap, {
-    clientX: hasWeigth ? x / totalWeigth : x,
-    clientY: hasWeigth ? y / totalWeigth : y,
+    clientX: hasWeight ? x / totalWeight : x,
+    clientY: hasWeight ? y / totalWeight : y,
   });
 }
 
@@ -248,9 +262,7 @@ export function download(
   const link = document.createElement('a');
   link.download = name;
   link.href = saveURL;
-  // document.body.appendChild(link);
   link.click();
-  // document.body.removeChild(link);
 }
 
 export function precision(
