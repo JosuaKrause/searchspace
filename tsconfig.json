@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitAny": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "allowJs": true,
+    "checkJs": true,
     "noEmit": true,
-    "lib": ["ES2023.Array", "ES2023", "DOM", "DOM.Iterable"],
-    "downlevelIteration": true
+    "strict": true
   },
   "files": [
     "js/app.js",

@@ -1,6 +1,6 @@
 /*
  * Searchspace – An interactive visualization for various similarity measures.
- * Copyright (C) 2024 Josua Krause
+ * Copyright (C) 2024-2026 Josua Krause
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import ConvexHull from './convex.js';
 import {
   convertMousePosition,
   convertTouchPosition,
+  getElement,
   loadImage,
   precision,
 } from './misc.js';
@@ -183,11 +184,7 @@ export default class App extends PixelCanvas {
   ) {
     const head = document.createElement('div');
     head.textContent = settings.title;
-    const header = document.querySelector(this.headerId);
-    if (!header) {
-      throw new Error(`Could not find ${this.headerId}`);
-    }
-    header.appendChild(head);
+    getElement(this.headerId).appendChild(head);
     const footNormal = document.createElement('div');
     footNormal.classList.add('normalonly');
     footNormal.textContent =
@@ -196,10 +193,7 @@ export default class App extends PixelCanvas {
     footMobile.classList.add('mobileonly');
     footMobile.textContent =
       'Add points by tapping. Select "Show Nearest" to remove points instead.';
-    const footer = document.querySelector(this.footerId);
-    if (!footer) {
-      throw new Error(`Could not find ${this.footerId}`);
-    }
+    const footer = getElement(this.footerId);
     footer.appendChild(footNormal);
     footer.appendChild(footMobile);
     const ref = urlParams.get('ref');
