@@ -12,6 +12,7 @@
     "js/convex.js",
     "js/misc.js",
     "js/pixelcanvas.js",
+    "js/urlstate.js",
     "index.js",
     "demo0.js",
     "demo1.js",

@@ -37,6 +37,7 @@ jobs:
           find . \
             -not -path './.*/*' \
             -not -path './sh/*' \
+            -not -path './tests/*' \
             -not -path './${{ env.OUTPUT }}/*' \
             -type f \
             -not -name '*.md' \

@@ -9,10 +9,30 @@ Read more about the visualization on [Medium](https://medium.com/@josua.krause/a
 
 The live version can be found [here](https://searchspace.josuakrause.com/).
 
+## Sharing a View
+
+The URL always reflects the current state, so it can be copied and shared.
+Only settings that differ from the page's defaults appear in it:
+
+| Parameter | Meaning                                                           | Example                        |
+| --------- | ----------------------------------------------------------------- | ------------------------------ |
+| `metric`  | Distance function, by name in lowercase with dashes               | `metric=cos`, `metric=adj-dot` |
+| `points`  | Point coordinates as `x,y` pairs in one list; empty for no points | `points=0.4,0.2,-0.5,0.8`      |
+| `unit`    | Unit circle, `1` or `0`                                           | `unit=0`                       |
+| `hull`    | Convex hull, `1` or `0`                                           | `hull=0`                       |
+| `corr`    | Correction                                                        | `corr=3.5`                     |
+| `view`    | View (zoom)                                                       | `view=2`                       |
+| `grid`    | Grid, `1` or `0`                                                  | `grid=1`                       |
+| `pos`     | Cursor position, set on click                                     | `pos=0.1,-0.2`                 |
+
+Invalid values, and settings a page does not offer, are ignored.
+Other parameters, like `ref`, are left as they are.
+
 ## Running Locally
 
 The whole repo can be served as is. There is no build step needed.
 For convenience the `make run-web` command exists to start a local file server.
+`npm test` runs the unit tests.
 
 ## Converting Videos
 
