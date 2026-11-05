@@ -306,7 +306,10 @@ canvas {
   top: 0;
   left: 0;
   color: white;
-  text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
+  text-shadow:
+    -1px -1px 0 black,
+    1px -1px 0 black,
+    -1px 1px 0 black,
     1px 1px 0 black;
   opacity: 75%;
   pointer-events: none;
