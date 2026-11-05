@@ -14,16 +14,16 @@ The live version can be found [here](https://searchspace.josuakrause.com/).
 The URL always reflects the current state, so it can be copied and shared.
 Only settings that differ from the page's defaults appear in it:
 
-| Parameter | Meaning | Example |
-|---|---|---|
-| `metric` | Distance function, by name in lowercase with dashes | `metric=cos`, `metric=adj-dot` |
-| `points` | Point coordinates as `x,y` pairs in one list; empty for no points | `points=0.4,0.2,-0.5,0.8` |
-| `unit` | Unit circle, `1` or `0` | `unit=0` |
-| `hull` | Convex hull, `1` or `0` | `hull=0` |
-| `corr` | Correction | `corr=3.5` |
-| `view` | View (zoom) | `view=2` |
-| `grid` | Grid, `1` or `0` | `grid=1` |
-| `pos` | Cursor position, set on click | `pos=0.1,-0.2` |
+| Parameter | Meaning                                                           | Example                        |
+| --------- | ----------------------------------------------------------------- | ------------------------------ |
+| `metric`  | Distance function, by name in lowercase with dashes               | `metric=cos`, `metric=adj-dot` |
+| `points`  | Point coordinates as `x,y` pairs in one list; empty for no points | `points=0.4,0.2,-0.5,0.8`      |
+| `unit`    | Unit circle, `1` or `0`                                           | `unit=0`                       |
+| `hull`    | Convex hull, `1` or `0`                                           | `hull=0`                       |
+| `corr`    | Correction                                                        | `corr=3.5`                     |
+| `view`    | View (zoom)                                                       | `view=2`                       |
+| `grid`    | Grid, `1` or `0`                                                  | `grid=1`                       |
+| `pos`     | Cursor position, set on click                                     | `pos=0.1,-0.2`                 |
 
 Invalid values, and settings a page does not offer, are ignored.
 Other parameters, like `ref`, are left as they are.
