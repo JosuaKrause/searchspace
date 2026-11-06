@@ -146,7 +146,7 @@ export default class PixelCanvas {
         } else {
           this.writeError(`Uncaught Error: ${e.error}`);
         }
-      } catch (_) {
+      } catch {
         // can't write -- let normal error reporting handle it
       }
       return false;
